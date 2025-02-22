@@ -2,25 +2,11 @@
 
 import type React from "react"
 
-import { Calendar, FileText, LayoutDashboard, LogOut, Menu, Plus, School, UserPlus, X } from "lucide-react"
-import Image from "next/image"
-import Link from "next/link"
+import { Calendar, FileText, LayoutDashboard,Plus, UserPlus } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
-
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Separator } from "@/components/ui/separator"
-import { cn } from "@/lib/utils"
-import Sidebar from "./components/Admin-Sidebar/Sidebar"
-import MobileSidebar from "./components/Admin-Mobile-Sidebar/MobileSidebar"
+import AdminSidebar from "./components/Admin-Sidebar/AdminSidebar"
+import AdminMobileSidebar from "./components/Admin-Mobile-Sidebar/AdminMobileSidebar"
 
 export default function AdminLayout({
   children,
@@ -84,12 +70,12 @@ export default function AdminLayout({
       )}
 
       {/* Sidebar */}
-      <Sidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen}/>
+      <AdminSidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen}/>
 
       {/* Main Content */}
       <div className="flex w-full flex-1 flex-col lg:pl-72">
         {/* Top Navbar for Mobile */}
-        <MobileSidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen}/>
+        <AdminMobileSidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen}/>
 
         {/* Page Content */}
         <main className="flex-1">{children}</main>

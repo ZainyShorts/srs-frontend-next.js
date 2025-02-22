@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import {  Menu} from "lucide-react"
+import { Menu} from "lucide-react"
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { usePathname } from 'next/navigation'
 import MobileNavProfile from '@/components/MobileNavProfile'
 
-const TeacherMobileSidebar = ({isSidebarOpen,setIsSidebarOpen}:{isSidebarOpen:boolean,setIsSidebarOpen:any})=> {
+const StudentMobileSidebar = ({isSidebarOpen,setIsSidebarOpen}:{isSidebarOpen:boolean,setIsSidebarOpen:any})=> {
     const pathname = usePathname()
-//   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
 
   // Prevent hydration mismatch
@@ -47,7 +46,7 @@ const TeacherMobileSidebar = ({isSidebarOpen,setIsSidebarOpen}:{isSidebarOpen:bo
     {/* Logo for Mobile */}
     <div className="flex flex-1 items-center gap-x-3">
       <Image src={'/Logo/srs.png'} alt='srs logo' height={8} width={8}  className="h-8 w-8 rounded-full" />
-      <span className="text-xl font-semibold">SRS Teacher</span>
+      <span className="text-xl font-semibold">SRS Student</span>
     </div>
 
     {/* Mobile Profile Menu */}
@@ -58,4 +57,4 @@ const TeacherMobileSidebar = ({isSidebarOpen,setIsSidebarOpen}:{isSidebarOpen:bo
   )
 }
 
-export default TeacherMobileSidebar
+export default StudentMobileSidebar

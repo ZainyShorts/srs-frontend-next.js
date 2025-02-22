@@ -62,7 +62,7 @@ export default function StudentCommunication() {
         className="max-w-4xl mx-auto"
       >
         <h1 className="text-4xl font-bold mb-8 text-center text-gray-800 dark:text-white">Class Communication</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
           {classes.map((cls, index) => (
             <motion.div
               key={cls.id}

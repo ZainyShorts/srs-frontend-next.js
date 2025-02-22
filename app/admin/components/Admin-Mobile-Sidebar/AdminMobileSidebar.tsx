@@ -12,7 +12,7 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { usePathname } from 'next/navigation'
 
-const MobileSidebar = ({isSidebarOpen,setIsSidebarOpen}:{isSidebarOpen:boolean,setIsSidebarOpen:any})=> {
+const AdminMobileSidebar = ({isSidebarOpen,setIsSidebarOpen}:{isSidebarOpen:boolean,setIsSidebarOpen:any})=> {
     const pathname = usePathname()
 //   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
@@ -86,4 +86,4 @@ const MobileSidebar = ({isSidebarOpen,setIsSidebarOpen}:{isSidebarOpen:boolean,s
   )
 }
 
-export default MobileSidebar
+export default AdminMobileSidebar
