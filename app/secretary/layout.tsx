@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
+import SidebarProfile from "@/components/SidebarProfile"
 
 export default function AdminLayout({
   children,
@@ -82,10 +83,16 @@ export default function AdminLayout({
         <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r bg-white px-6 pb-4">
           {/* Logo and Close Button */}
           <div className="flex h-16 shrink-0 items-center justify-between">
-            <Link href="/admin" className="flex items-center gap-2">
-              <School className="h-8 w-8" />
-              <span className="text-xl font-semibold">SIS Sacratory</span>
-            </Link>
+          <Link href="/admin" className="flex items-center gap-2">
+    <Image
+      src="/Logo/srs.png"
+      alt="SRS Admin Logo"
+      width={44}
+      height={32}
+      className="h-12 w-12  rounded-full"
+    />
+    <span className="text-xl font-semibold">SRS Secretary</span>
+  </Link>
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setIsSidebarOpen(false)}>
               <X className="h-6 w-6" />
             </Button>
@@ -124,34 +131,7 @@ export default function AdminLayout({
               {/* Profile */}
               <li className="-mx-6 mt-auto">
                 <Separator className="mb-2" />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-16 w-full justify-start gap-x-4 px-6 py-3 hover:bg-gray-50">
-                      <Image
-                        className="h-8 w-8 rounded-full bg-gray-50"
-                        src="https://external-preview.redd.it/auth0-stable-support-for-app-router-v0-9hlmLSqkruo0AYwR-TJd50zI1txBKsK5e1Qputn2lGM.jpg?width=1080&crop=smart&auto=webp&s=f25c5459703d0f6d74df1a2bc49103c8629fd396"
-                        alt=""
-                        width={32}
-                        height={32}
-                      />
-                      <div className="flex flex-col items-start">
-                        <span className="text-sm font-semibold leading-6 text-gray-900">Zainy</span>
-                        <span className="text-xs leading-6 text-gray-400">Administrator</span>
-                      </div>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>Profile</DropdownMenuItem>
-                    <DropdownMenuItem>Settings</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Log out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <SidebarProfile title="Secretary" />
               </li>
             </ul>
           </nav>
@@ -175,7 +155,7 @@ export default function AdminLayout({
           {/* Logo for Mobile */}
           <div className="flex flex-1 items-center gap-x-3">
             <School className="h-8 w-8" />
-            <span className="text-xl font-semibold">SIS Sacratory</span>
+            <span className="text-xl font-semibold">SRS Sacratory</span>
           </div>
 
           {/* Mobile Profile Menu */}

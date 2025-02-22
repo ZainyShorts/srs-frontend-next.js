@@ -86,7 +86,7 @@ export default function AdminLayout({
       height={32}
       className="h-8 w-8 rounded-full"
     />
-    <span className="text-xl font-semibold">SIS Nurse</span>
+    <span className="text-xl font-semibold">SRS Nurse</span>
   </Link>
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setIsSidebarOpen(false)}>
               <X className="h-6 w-6" />
@@ -177,7 +177,7 @@ export default function AdminLayout({
           {/* Logo for Mobile */}
           <div className="flex flex-1 items-center gap-x-3">
             <School className="h-8 w-8" />
-            <span className="text-xl font-semibold">SIS Admin</span>
+            <span className="text-xl font-semibold">SRS Admin</span>
           </div>
 
           {/* Mobile Profile Menu */}

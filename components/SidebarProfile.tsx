@@ -10,6 +10,7 @@ import {
 import { Button } from './ui/button'
 import Image from 'next/image'
 import { LogOut } from 'lucide-react'
+import Link from 'next/link'
 
 const SidebarProfile = ({title}:{title:string}) => {
   return (
@@ -33,8 +34,11 @@ const SidebarProfile = ({title}:{title:string}) => {
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem>
+                    <Link href={'/'} className='flex cursor-pointer' >
                       <LogOut className="mr-2 h-4 w-4" />
                       Log out
+                      </Link>
+
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
