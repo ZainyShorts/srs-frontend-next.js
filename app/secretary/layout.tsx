@@ -43,17 +43,17 @@ export default function AdminLayout({
   const navigation = [
     {
       name: "Schedule Courses",
-      href: "/secratary/schedule-course",
+      href: "/secretary/schedule-course",
       icon: LayoutDashboard,
     },
     {
       name: "Time Table",
-      href: "/secratary/timetable",
+      href: "/secretary/timetable",
       icon: UserPlus,
     },
     {
       name: "Assignments",
-      href: "/secratary/assignments",
+      href: "/secretary/assignments",
       icon: Plus,
     },
   ]
