@@ -1,191 +1,550 @@
 "use client"
 
-import { useState } from "react"
-import { Camera, CheckCircle, Upload, User } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
+import { useState, type ChangeEvent, useEffect } from "react"
+import axios from "axios"
+import { ToastContainer, toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { StudentForm } from "./student-form"
+import { GuardianForm } from "./guardian-form"
 
-interface AddStudentModalProps {
+interface StudentGuardianModalProps {
   isOpen: boolean
   onClose: () => void
+  studentData?: any
 }
 
-export default function AddStudentModal({ isOpen, onClose }: AddStudentModalProps) {
-  const [step, setStep] = useState(1)
+interface StudentData {
+  rollNo: string
+  firstName: string
+  lastName: string
+  class: string
+  section: string
+  gender: string
+  dob: string
+  email: string
+  phone: string
+  address: string
+  enrollDate: string
+  expectedGraduation: string
+  profilePhoto: any
+  guardianName: string
+  guardianEmail: string
+  guardianPhone: string
+  guardianPhoto: any
+}
 
-  const handleContinue = () => {
-    if (step < 3) {
-      setStep(step + 1)
+interface FormErrors {
+  rollNo: string
+  firstName: string
+  lastName: string
+  class: string
+  section: string
+  dob: string
+  email: string
+  phone: string
+  address: string
+  expectedGraduation: string
+  guardianName: string
+  guardianEmail: string
+  guardianPhone: string
+}
+
+export default function StudentGuardianModal({ isOpen, onClose, studentData }: StudentGuardianModalProps) {
+  const [currentStep, setCurrentStep] = useState<"student" | "guardian">("student")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formData, setFormData] = useState<StudentData>({
+    rollNo: "",
+    firstName: "",
+    lastName: "",
+    class: "",
+    section: "",
+    gender: "Male",
+    dob: "",
+    email: "",
+    phone: "",
+    address: "",
+    enrollDate: new Date().toISOString().split("T")[0],
+    expectedGraduation: new Date().getFullYear().toString(),
+    profilePhoto: null,
+    guardianName: "",
+    guardianEmail: "",
+    guardianPhone: "",
+    guardianPhoto: null,
+  })
+
+  const [errors, setErrors] = useState<FormErrors>({
+    rollNo: "",
+    firstName: "",
+    lastName: "",
+    class: "",
+    section: "",
+    dob: "",
+    email: "",
+    phone: "",
+    address: "",
+    expectedGraduation: "",
+    guardianName: "",
+    guardianEmail: "",
+    guardianPhone: "",
+  })
+
+  const [studentPhotoPreview, setStudentPhotoPreview] = useState<string | null>(null)
+  const [guardianPhotoPreview, setGuardianPhotoPreview] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (currentStep === "student") {
+      setErrors((prev) => ({
+        ...prev,
+        guardianName: "",
+        guardianEmail: "",
+        guardianPhone: "",
+      }))
     } else {
-      // Handle form submission here
+      setErrors((prev) => ({
+        ...prev,
+        rollNo: "",
+        firstName: "",
+        lastName: "",
+        class: "",
+        section: "",
+        dob: "",
+        email: "",
+        phone: "",
+        address: "",
+        expectedGraduation: "",
+      }))
+    }
+  }, [currentStep])
+
+  useEffect(() => {
+    if (studentData) {
+      setFormData({
+        rollNo: studentData.rollNo || "",
+        firstName: studentData.firstName || "",
+        lastName: studentData.lastName || "",
+        class: studentData.class || "",
+        section: studentData.section || "",
+        gender: studentData.gender || "Male",
+        dob: studentData.dob ? new Date(studentData.dob).toISOString().split("T")[0] : "",
+        email: studentData.email || "",
+        phone: studentData.phone || "",
+        address: studentData.address || "",
+        enrollDate: studentData.enrollDate
+          ? new Date(studentData.enrollDate).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0],
+        expectedGraduation: studentData.expectedGraduation || new Date().getFullYear().toString(),
+        profilePhoto: null,
+        guardianName: studentData.guardianName || "",
+        guardianEmail: studentData.guardianEmail || "",
+        guardianPhone: studentData.guardianPhone || "",
+        guardianPhoto: null,
+      })
+    }
+  }, [studentData])
+
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setFormData({ ...formData, [name]: value })
+
+    if (errors[name as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }))
+    }
+  }
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData({ ...formData, [name]: value })
+
+    if (errors[name as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }))
+    }
+  }
+
+  const handleStudentPhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+      setFormData({ ...formData, profilePhoto: file })
+
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        setStudentPhotoPreview(event.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleGuardianPhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+      setFormData({ ...formData, guardianPhoto: file })
+
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        setGuardianPhotoPreview(event.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const validateStudentForm = () => {
+    const newErrors = { ...errors }
+    let isValid = true
+
+    if (!formData.rollNo) {
+      newErrors.rollNo = "Roll number is required"
+      isValid = false
+    }
+
+    if (!formData.firstName) {
+      newErrors.firstName = "First name is required"
+      isValid = false
+    }
+
+    if (!formData.lastName) {
+      newErrors.lastName = "Last name is required"
+      isValid = false
+    }
+
+    if (!formData.class) {
+      newErrors.class = "Class is required"
+      isValid = false
+    }
+
+    if (!formData.section) {
+      newErrors.section = "Section is required"
+      isValid = false
+    }
+
+    if (!formData.dob) {
+      newErrors.dob = "Date of birth is required"
+      isValid = false
+    }
+
+    if (!formData.email) {
+      newErrors.email = "Email is required"
+      isValid = false
+    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+      newErrors.email = "Invalid email format"
+      isValid = false
+    }
+
+    if (!formData.phone) {
+      newErrors.phone = "Phone number is required"
+      isValid = false
+    } else if (!/^\d{10}$/.test(formData.phone)) {
+      newErrors.phone = "Phone must be 10 digits"
+      isValid = false
+    }
+
+    if (!formData.address) {
+      newErrors.address = "Address is required"
+      isValid = false
+    }
+
+    if (!formData.expectedGraduation) {
+      newErrors.expectedGraduation = "Expected graduation year is required"
+      isValid = false
+    }
+
+    setErrors(newErrors)
+
+    if (!isValid) {
+      toast.error("Please fill all required fields correctly", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      })
+    }
+
+    return isValid
+  }
+
+  const validateGuardianForm = () => {
+    const newErrors = { ...errors }
+    let isValid = true
+
+    if (!formData.guardianName) {
+      newErrors.guardianName = "Guardian name is required"
+      isValid = false
+    }
+
+    if (!formData.guardianEmail) {
+      newErrors.guardianEmail = "Guardian email is required"
+      isValid = false
+    } else if (!/^\S+@\S+\.\S+$/.test(formData.guardianEmail)) {
+      newErrors.guardianEmail = "Invalid email format"
+      isValid = false
+    }
+
+    if (!formData.guardianPhone) {
+      newErrors.guardianPhone = "Guardian phone number is required"
+      isValid = false
+    } else if (!/^\d{10}$/.test(formData.guardianPhone)) {
+      newErrors.guardianPhone = "Phone must be 10 digits"
+      isValid = false
+    }
+
+    setErrors(newErrors)
+
+    if (!isValid) {
+      toast.error("Please fill all required guardian fields correctly", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      })
+    }
+
+    return isValid
+  }
+
+  const handleContinueToGuardian = () => {
+    if (validateStudentForm()) {
+      setCurrentStep("guardian")
+    }
+  }
+
+  const handleBackToStudent = () => {
+    setCurrentStep("student")
+  }
+
+  const handleSubmit = async () => {
+    if (!validateGuardianForm()) {
+      return;
+    }
+  
+    setIsSubmitting(true);
+  
+    try {
+      let apiData;
+  
+      if (studentData) {
+        apiData = {
+          rollNo: formData.rollNo || "",
+          firstName: formData.firstName || "",
+          lastName: formData.lastName || "",
+          class: formData.class || "",
+          section: formData.section || "",
+          gender: formData.gender || "",
+          dob: formData.dob || "",
+          email: formData.email || "",
+          phone: formData.phone || "",
+          address: formData.address || "",
+          enrollDate: formData.enrollDate || "",
+          expectedGraduation: formData.expectedGraduation || "",
+          profilePhoto: formData.profilePhoto ? "no" : "no",
+          guardianName: formData.guardianName || "",
+          guardianEmail: formData.guardianEmail || "",
+          guardianPhone: formData.guardianPhone || "",
+          guardianPhoto: formData.guardianPhoto ? "no" : "no",
+        };
+  
+        console.log("updateData", apiData);
+        const response = await axios.put(
+          `${process.env.NEXT_PUBLIC_SRS_SERVER}/student/${studentData._id}`,
+          apiData
+        );
+        toast.success("Student updated successfully", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        console.log("response", response);
+      } else {
+        apiData = {
+          rollNo: formData.rollNo || "",
+          firstName: formData.firstName || "",
+          lastName: formData.lastName || "",
+          class: formData.class || "",
+          section: formData.section || "",
+          gender: formData.gender || "",
+          dob: formData.dob || "",
+          email: formData.email || "",
+          phone: formData.phone || "",
+          address: formData.address || "",
+          enrollDate: formData.enrollDate || "",
+          expectedGraduation: formData.expectedGraduation || "",
+          profilePhoto: formData.profilePhoto ? "no" : "no",
+          guardianName: formData.guardianName || "",
+          guardianEmail: formData.guardianEmail || "",
+          guardianPhone: formData.guardianPhone || "",
+          guardianPhoto: formData.guardianPhoto ? "no" : "no",
+        };
+  
+        console.log("AddingData", apiData);
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_SRS_SERVER}/student/add`,
+          apiData
+        );
+        toast.success("Student added successfully", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      }
+  
+      resetForm();
+      onClose();
+    } catch (error) {
+      console.error("Error submitting student data:", error);
+      toast.error(
+        `Failed to ${studentData ? "update" : "add"} student. Please try again.`,
+        {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        }
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+
+  const resetForm = () => {
+    setCurrentStep("student")
+    setFormData({
+      rollNo: "",
+      firstName: "",
+      lastName: "",
+      class: "",
+      section: "",
+      gender: "Male",
+      dob: "",
+      email: "",
+      phone: "",
+      address: "",
+      enrollDate: new Date().toISOString().split("T")[0],
+      expectedGraduation: new Date().getFullYear().toString(),
+      profilePhoto: null,
+      guardianName: "",
+      guardianEmail: "",
+      guardianPhone: "",
+      guardianPhoto: null,
+    })
+    setStudentPhotoPreview(null)
+    setGuardianPhotoPreview(null)
+    setErrors({
+      rollNo: "",
+      firstName: "",
+      lastName: "",
+      class: "",
+      section: "",
+      dob: "",
+      email: "",
+      phone: "",
+      address: "",
+      expectedGraduation: "",
+      guardianName: "",
+      guardianEmail: "",
+      guardianPhone: "",
+    })
+  }
+
+  const handleCloseRequest = (open: boolean) => {
+    if (!isSubmitting && !open) {
       onClose()
-      setStep(1)
     }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] sm:max-w-[80vw] md:max-w-[70vw] lg:max-w-5xl p-0">
-        <div className="custom-scrollbar max-h-[80vh] overflow-y-auto">
-          <DialogHeader className="p-6 pb-0">
-            <DialogTitle>Add New Student</DialogTitle>
-          </DialogHeader>
-          <div className="p-6 space-y-8">
-            {/* Progress Steps */}
-            <div className="flex justify-between">
-              {["Personal Details", "Academic Info", "Contact & Emergency"].map((stepName, index) => (
-                <div key={stepName} className="flex items-center">
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border-2 ${
-                        index + 1 <= step ? "border-black bg-black text-white" : "border-gray-200 bg-white"
-                      }`}
-                    >
-                      {index + 1 <= step ? <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" /> : index + 1}
-                    </div>
-                    <span className="mt-2 text-xs sm:text-sm font-medium">{stepName}</span>
-                  </div>
-                  {index < 2 && <div className="mx-2 sm:mx-4 h-[2px] w-12 sm:w-24 bg-gray-200" />}
+    <>
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        style={{ zIndex: 10000 }}
+      />
+
+      <Dialog open={isOpen} onOpenChange={handleCloseRequest}>
+        <DialogContent className="max-w-[95vw] sm:max-w-[80vw] md:max-w-[70vw] lg:max-w-5xl p-0">
+          <div className="custom-scrollbar max-h-[80vh] overflow-y-auto">
+            <DialogHeader className="p-6 pb-0">
+              <DialogTitle>
+                {studentData ? "Edit " : "Add "}
+                {currentStep === "student" ? "Student Information" : "Guardian Information"}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="relative overflow-hidden">
+              <div
+                className="flex transition-transform duration-500 ease-in-out"
+                style={{
+                  transform: currentStep === "student" ? "translateX(0%)" : "translateX(-50%)",
+                  width: "200%",
+                }}
+              >
+                <div className="w-1/2 flex-shrink-0">
+                  <StudentForm
+                    formData={formData}
+                    errors={errors}
+                    photoPreview={studentPhotoPreview}
+                    onInputChange={handleInputChange}
+                    onSelectChange={handleSelectChange}
+                    onPhotoChange={handleStudentPhotoChange}
+                    onContinue={handleContinueToGuardian}
+                    onCancel={onClose}
+                    disabled={isSubmitting}
+                  />
                 </div>
-              ))}
-            </div>
-
-            <div className="grid gap-8 lg:grid-cols-3">
-              {/* Photo Upload */}
-              <Card className="lg:col-span-1">
-                <CardHeader>
-                  <CardTitle>Student Photo</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex flex-col items-center">
-                    <div className="relative">
-                      <div className="flex h-32 w-32 sm:h-40 sm:w-40 items-center justify-center rounded-full bg-gray-100">
-                        <User className="h-16 w-16 sm:h-20 sm:w-20 text-gray-400" />
-                      </div>
-                      <button className="absolute bottom-0 right-0 rounded-full bg-black p-2 text-white shadow-lg">
-                        <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
-                      </button>
-                    </div>
-                    <Button variant="outline" className="mt-4">
-                      <Upload className="mr-2 h-4 w-4" />
-                      Upload Photo
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Personal Details */}
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle>Personal Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input id="firstName" placeholder="Enter first name" className="border-gray-200" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input id="lastName" placeholder="Enter last name" className="border-gray-200" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Gender</Label>
-                    <RadioGroup defaultValue="male" className="flex space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="male" id="male" />
-                        <Label htmlFor="male">Male</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="female" id="female" />
-                        <Label htmlFor="female">Female</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  <div className="grid gap-6 md:grid-cols-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="dob">Date of Birth</Label>
-                      <Input id="dob" type="date" className="border-gray-200" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="rollNo">Roll Number</Label>
-                      <Input id="rollNo" type="number" placeholder="Enter roll number" className="border-gray-200" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="class">Class</Label>
-                      <Select>
-                        <SelectTrigger id="class">
-                          <SelectValue placeholder="Select class" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[9, 10, 11, 12].map((classNum) => (
-                            <SelectItem key={classNum} value={classNum.toString()}>
-                              Class {classNum}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="section">Section</Label>
-                      <Select>
-                        <SelectTrigger id="section">
-                          <SelectValue placeholder="Select section" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {["A", "B", "C"].map((section) => (
-                            <SelectItem key={section} value={section}>
-                              Section {section}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex justify-end space-x-4">
-                    <Button variant="outline" onClick={onClose}>
-                      Cancel
-                    </Button>
-                    <Button className="bg-black text-white hover:bg-gray-800" onClick={handleContinue}>
-                      {step === 3 ? "Submit" : "Continue"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                <div className="w-1/2 flex-shrink-0">
+                  <GuardianForm
+                    formData={formData}
+                    errors={errors}
+                    photoPreview={guardianPhotoPreview}
+                    onInputChange={handleInputChange}
+                    onPhotoChange={handleGuardianPhotoChange}
+                    onSubmit={handleSubmit}
+                    onBack={handleBackToStudent}
+                    isSubmitting={isSubmitting}
+                    disabled={isSubmitting}
+                    isEditing={!!studentData}
+                  />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </DialogContent>
-      <style jsx>{`
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: #888 #f1f1f1;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f1f1;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background-color: #888;
-          border-radius: 6px;
-          border: 3px solid #f1f1f1;
-        }
-      `}</style>
-    </Dialog>
+        </DialogContent>
+        <style jsx>{`
+          .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #888 #f1f1f1;
+          }
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #888;
+            border-radius: 6px;
+            border: 3px solid #f1f1f1;
+          }
+        `}</style>
+      </Dialog>
+    </>
   )
 }
 

@@ -1,51 +1,87 @@
 "use client"
 
-import { useState } from "react"
-import { ChevronLeft, ChevronRight, Edit, Trash2, Plus } from "lucide-react"
+import { useEffect, useState, useCallback } from "react"
+import { ChevronLeft, ChevronRight, Edit, Trash2, Plus, Copy, Check } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import AddStudentModal from "./Add-students/AddStudents"
-
-// Replace the dummy data generation
-const dummyStudents = Array(20)
-  .fill(null)
-  .map((_, i) => ({
-    id: i + 1,
-    firstName: `Student${i + 1}`,
-    lastName: `Lastname${i + 1}`,
-    rollNo: Math.floor(Math.random() * 100) + 1,
-    class: Math.floor(Math.random() * 4) + 9,
-    section: String.fromCharCode(65 + Math.floor(Math.random() * 3)), // A, B, or C
-    gender: i % 2 === 0 ? "Male" : "Female",
-    dob: `200${Math.floor(i / 2) + 1}-01-01`,
-  }))
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import StudentGuardianModal from "./Add-students/AddStudents"
+import axios from "axios"
 
 export default function StudentsTable() {
+  const [students, setStudents] = useState([])
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalRecords, setTotalRecords] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
+  const [limit, setLimit] = useState(10)
   const [searchTerm, setSearchTerm] = useState("")
-  // Replace gradeFilter with classFilter
   const [classFilter, setClassFilter] = useState("all")
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingStudent, setEditingStudent] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [copiedId, setCopiedId] = useState(null)
 
-  // Update the filteredStudents function
-  const filteredStudents = dummyStudents.filter(
-    (student) =>
-      (student.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.rollNo.toString().includes(searchTerm)) &&
-      (classFilter === "all" || student.class.toString() === classFilter),
+  const fetchStudentData = useCallback(
+    async (page = 1) => {
+      try {
+        setIsLoading(true)
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student`) 
+        console.log('response',response);
+        setStudents(response.data.data || [])
+        setTotalPages(response.data.totalPages || 0)
+        setTotalRecords(response.data.totalRecordsCount || 0)
+        setCurrentPage(response.data.currentPage || 1)
+        setLimit(response.data.limit || 10)
+        setIsLoading(false)
+      } catch (error) {
+        console.error("Error fetching student data:", error)
+        setIsLoading(false)
+      }
+    },
+    [limit, searchTerm, classFilter],
   )
 
-  const pageCount = Math.ceil(filteredStudents.length / 10)
-  const currentStudents = filteredStudents.slice((currentPage - 1) * 10, currentPage * 10)
+  useEffect(() => {
+    fetchStudentData(currentPage)
+  }, [currentPage, fetchStudentData])
+
+  const handlePageChange = (newPage : any) => {
+    setCurrentPage(newPage)
+  }
+
+  const getTableHeaders = () => {
+    if (students.length === 0) return []
+    return Object.keys(students[0]).filter((key) => key !== "__v" && key !== "_id")
+  }
+
+  const formatDate = (dateString: any): string => {
+    return new Date(dateString).toISOString().slice(0, 10);
+  };
+  
+
+  const formatPassword = (password : any) => {
+    return password.slice(0, 6) + "..."
+  }
+
+  const copyPassword = (password : any, id : any) => {
+    navigator.clipboard.writeText(password)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
 
   return (
     <div className="container mx-auto py-10 p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Students</h1>
-        <Button onClick={() => setIsModalOpen(true)} className="bg-black text-white hover:bg-gray-800">
+        <Button 
+          onClick={() => {
+            setEditingStudent(null)
+            setIsModalOpen(true)
+          }} 
+          className="bg-black text-white hover:bg-gray-800"
+        >
           <Plus className="mr-2 h-4 w-4" /> Add Student
         </Button>
       </div>
@@ -57,7 +93,6 @@ export default function StudentsTable() {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
         />
-        {/* Update the Select component for filtering */}
         <Select value={classFilter} onValueChange={setClassFilter}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by class" />
@@ -73,76 +108,120 @@ export default function StudentsTable() {
         </Select>
       </div>
 
-      <Table>
-        {/* Update the Table header */}
-        <TableHeader>
-          <TableRow>
-            <TableHead>ID</TableHead>
-            <TableHead>Roll No</TableHead>
-            <TableHead>First Name</TableHead>
-            <TableHead>Last Name</TableHead>
-            <TableHead>Class</TableHead>
-            <TableHead>Section</TableHead>
-            <TableHead>Gender</TableHead>
-            <TableHead>Date of Birth</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        {/* Update the Table body */}
-        <TableBody>
-          {currentStudents.map((student) => (
-            <TableRow key={student.id}>
-              <TableCell>{student.id}</TableCell>
-              <TableCell>{student.rollNo}</TableCell>
-              <TableCell>{student.firstName}</TableCell>
-              <TableCell>{student.lastName}</TableCell>
-              <TableCell>{student.class}</TableCell>
-              <TableCell>{student.section}</TableCell>
-              <TableCell>{student.gender}</TableCell>
-              <TableCell>{student.dob}</TableCell>
-              <TableCell>
-                <Button variant="ghost" size="sm" className="mr-2">
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      {isLoading ? (
+        <div className="flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+        </div>
+      ) : students.length === 0 ? (
+        <div className="text-center py-10">No students found</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table className="w-full">
+            <TableHeader>
+              <TableRow>
+                {getTableHeaders().map((header) => (
+                  <TableHead key={header} className="whitespace-nowrap">
+                    {header.charAt(0).toUpperCase() + header.slice(1).replace(/([A-Z])/g, " $1")}
+                  </TableHead>
+                ))}
+                <TableHead className="whitespace-nowrap">Edit</TableHead>
+                <TableHead className="whitespace-nowrap">Delete</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {students.map((student) => (
+                <TableRow key={student._id}>
+                  {getTableHeaders().map((key) => (
+                    <TableCell key={key} className="whitespace-nowrap">
+                      {key === "createdAt" || key === "updatedAt" ? (
+                        formatDate(student[key])
+                      ) : key === "password" ? (
+                        <div className="flex items-center">
+                          <span>{formatPassword(student[key])}</span>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => copyPassword(student[key], student._id)}
+                                  className="ml-2"
+                                >
+                                  {copiedId === student._id ? (
+                                    <Check className="h-4 w-4" />
+                                  ) : (
+                                    <Copy className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{copiedId === student._id ? "Copied!" : "Copy password"}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      ) : (
+                        student[key]
+                      )}
+                    </TableCell>
+                  ))}
+                  <TableCell className="whitespace-nowrap">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => {
+                        setEditingStudent(student)
+                        setIsModalOpen(true)
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <Button variant="ghost" size="sm">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <div className="flex justify-between items-center mt-4">
         <div>
-          Showing {(currentPage - 1) * 10 + 1} to {Math.min(currentPage * 10, filteredStudents.length)} of{" "}
-          {filteredStudents.length} students
+          Showing {(currentPage - 1) * limit + 1} to {Math.min(currentPage * limit, totalRecords)} of {totalRecords}{" "}
+          students
         </div>
         <div className="flex items-center space-x-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span>
-            {currentPage} of {pageCount}
+            {currentPage} of {totalPages}
           </span>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, pageCount))}
-            disabled={currentPage === pageCount}
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      <AddStudentModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <StudentGuardianModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        studentData={editingStudent}
+      />
     </div>
   )
 }
-
