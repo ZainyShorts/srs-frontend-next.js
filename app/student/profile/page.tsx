@@ -19,7 +19,7 @@ export default function StudentProfile() {
     const fetchStudentData = async () => {
       try {
         setIsLoading(true)
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student/67c9981f65ada86870004dd2`)
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student/67ca06ebeaca2eced1115be0`)
         console.log("response", response)
         setStudent(response.data || null)
       } catch (error) {
@@ -62,11 +62,11 @@ export default function StudentProfile() {
   }
 
   const guardianInfo = {
-    name: student.guardian.name,
-    relation: student.guardian.relation,
-    email: student.guardian.email,
-    phone: student.guardian.phone,
-    occupation: student.guardian.profession, 
+    name: student.guardian.guardianName,
+    relation: student.guardian.guardianRelation,
+    email: student.guardian.guardianEmail,
+    phone: student.guardian.guardianPhone,
+    occupation: student.guardian.guardianProfession, 
   }
 
   return (

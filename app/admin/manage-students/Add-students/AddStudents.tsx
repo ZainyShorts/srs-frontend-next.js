@@ -143,17 +143,19 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
           ? new Date(studentData.enrollDate).toISOString().split("T")[0]
           : new Date().toISOString().split("T")[0],
         expectedGraduation: studentData.expectedGraduation || new Date().getFullYear().toString(),
-        profilePhoto: null,
-        guardianName: studentData.guardian.name || "",
-        guardianEmail: studentData.guardian.email || "",
-        guardianPhone: studentData.guardian.phone || "",
-        guardianPhoto: null, 
-        guardianRelation: "", 
-        guardianProfession: "",
+        profilePhoto: "photo",
+        guardianName: studentData.guardian.guardianName || "",
+        guardianEmail: studentData.guardian.guardianEmail || "",
+        guardianPhone: studentData.guardian.guardianPhone || "",
+        guardianPhoto: "photo", 
+        guardianRelation: studentData.guardian.guardianRelation, 
+        guardianProfession: studentData.guardian.guardianProfession,
       })
     }
   }, [studentData])
-
+useEffect(()=>{ 
+console.log('data',studentData)
+},[studentData]) 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData({ ...formData, [name]: value })
