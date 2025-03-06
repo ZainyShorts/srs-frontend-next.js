@@ -23,7 +23,7 @@ import ExportModal from "./exportModal"
 
 interface Guardian {
   _id: string
-  name: string
+  guardianName: string
   guardianEmail: string
   guardianPhone: string
   guardianRelation: string
@@ -154,7 +154,7 @@ export default function ReportsPage() {
       Email: student.email,
       Phone: student.phone,
       "Enroll Date": formatDate(student.enrollDate),
-      "Guardian Name": student.guardian.name,
+      "Guardian Name": student.guardian.guardianName,
       "Guardian Relation": student.guardian.guardianRelation,
       "Guardian Phone": student.guardian.guardianPhone,
       "Guardian Email": student.guardian.guardianEmail,
@@ -367,7 +367,7 @@ export default function ReportsPage() {
                             <TableCell className="whitespace-nowrap">{student.email}</TableCell>
                             <TableCell className="whitespace-nowrap">{student.phone}</TableCell>
                             <TableCell className="whitespace-nowrap">{formatDate(student.enrollDate)}</TableCell>
-                            <TableCell className="whitespace-nowrap">{student.guardian.name}</TableCell>
+                            <TableCell className="whitespace-nowrap">{student.guardian.guardianName}</TableCell>
                             <TableCell className="whitespace-nowrap">{student.guardian.guardianRelation}</TableCell>
                             <TableCell className="whitespace-nowrap">{student.guardian.guardianPhone}</TableCell>
                             <TableCell className="whitespace-nowrap">{student.guardian.guardianEmail}</TableCell>
