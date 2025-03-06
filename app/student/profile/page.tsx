@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Mail, Phone, MapPin, BookOpen, Award, Calendar, Clock, User, Briefcase, Heart } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -8,36 +8,66 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
+import axios from "axios"
 
 export default function StudentProfile() {
-  const [cgpa, setCgpa] = useState(3.8)
+  const [student, setStudent] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [cgpa, setCgpa] = useState(0.0) 
+
+  useEffect(() => {
+    const fetchStudentData = async () => {
+      try {
+        setIsLoading(true)
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student/2342342342211`)
+        console.log("response", response)
+        setStudent(response.data || null)
+      } catch (error) {
+        console.error("Error fetching student data:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchStudentData()
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-indigo-950">
+        <div className="text-xl font-semibold">Loading student profile...</div>
+      </div>
+    )
+  }
+
+  if (!student) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-indigo-950">
+        <div className="text-xl font-semibold">Student not found</div>
+      </div>
+    )
+  }
 
   const studentInfo = {
-    name: "Zain ul Abidin",
-    email: "zainyshorts@superio.edu",
-    phone: "+92 (345) 425-4567",
-    dob: "29/11/2003",
-    address: "123 Campus Drive, University City, State 12345",
-    major: "Computer Science",
-    year: "4th",
-    enrollmentDate: "September 2021",
-    expectedGraduation: "May 2025",
+    name: `${student.firstName} ${student.lastName}`,
+    email: student.email,
+    phone: student.phone,
+    dob: new Date(student.dob).toLocaleDateString(),
+    address: student.address,
+    major: "Computer Science", // Not in API, keeping static
+    year: student.class,
+    section: student.section,
+    enrollmentDate: new Date(student.enrollDate).toLocaleDateString(),
+    expectedGraduation: student.expectedGraduation,
   }
 
   const guardianInfo = {
-    name: "Ahmed Khan",
-    relation: "Father",
-    email: "ahmed.khan@example.com",
-    phone: "+92 (300) 123-4567",
-    occupation: "Software Engineer",
+    name: student.guardian.name,
+    relation: student.guardian.relation,
+    email: student.guardian.email,
+    phone: student.guardian.phone,
+    occupation: student.guardian.profession, 
   }
-
-  const classes = [
-    { name: "Advanced Algorithms", grade: "A", progress: 90 },
-    { name: "Database Systems", grade: "A-", progress: 85 },
-    { name: "Machine Learning", grade: "B+", progress: 78 },
-    { name: "Web Development", grade: "A", progress: 95 },
-  ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-indigo-950 p-8">
@@ -77,7 +107,7 @@ export default function StudentProfile() {
                 <h1 className="text-4xl font-bold mb-2 text-gray-800 dark:text-white">{studentInfo.name}</h1>
                 <p className="text-xl text-gray-600 dark:text-gray-400 mb-4">{studentInfo.major}</p>
                 <Badge variant="secondary" className="mb-6">
-                  {studentInfo.year} Year Student
+                  Class {studentInfo.year}-{studentInfo.section}
                 </Badge>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-3">
@@ -87,7 +117,7 @@ export default function StudentProfile() {
                     <InfoItem icon={MapPin} text={studentInfo.address} />
                   </div>
                   <div className="space-y-3">
-                    <InfoItem icon={BookOpen} text={`Year: ${studentInfo.year}`} />
+                    <InfoItem icon={BookOpen} text={`Class: ${studentInfo.year}-${studentInfo.section}`} />
                     <InfoItem icon={Calendar} text={`Enrolled: ${studentInfo.enrollmentDate}`} />
                     <InfoItem icon={Clock} text={`Expected Graduation: ${studentInfo.expectedGraduation}`} />
                   </div>
@@ -110,36 +140,10 @@ export default function StudentProfile() {
               </div>
             </div>
 
-            <Tabs defaultValue="classes" className="mt-12">
-              <TabsList className="grid w-full grid-cols-2 mb-8">
-                <TabsTrigger value="classes">Current Classes</TabsTrigger>
+            <Tabs defaultValue="guardian" className="mt-12">
+              <TabsList className="grid w-full grid-cols-1 mb-8">
                 <TabsTrigger value="guardian">Guardian Information</TabsTrigger>
               </TabsList>
-              <TabsContent value="classes">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {classes.map((cls, index) => (
-                    <motion.div
-                      key={cls.name}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <Card className="hover:shadow-md transition-shadow duration-300">
-                        <CardContent className="p-6">
-                          <div className="flex justify-between items-center mb-4">
-                            <span className="font-semibold text-lg">{cls.name}</span>
-                            <Badge variant="outline">{cls.grade}</Badge>
-                          </div>
-                          <Progress value={cls.progress} className="h-2" />
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                            Course Progress: {cls.progress}%
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </div>
-              </TabsContent>
               <TabsContent value="guardian">
                 <Card>
                   <CardContent className="p-6">

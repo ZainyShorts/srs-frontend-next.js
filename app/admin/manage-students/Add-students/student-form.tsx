@@ -63,7 +63,6 @@ export function StudentForm({
   return (
     <div className="p-6 space-y-8">
       <div className="grid gap-8 lg:grid-cols-3">
-        {/* Photo Upload */}
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle>Student Photo</CardTitle>

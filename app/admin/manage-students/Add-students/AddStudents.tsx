@@ -11,7 +11,8 @@ import { GuardianForm } from "./guardian-form"
 interface StudentGuardianModalProps {
   isOpen: boolean
   onClose: () => void
-  studentData?: any
+  studentData?: any 
+  handleDone?:any
 }
 
 interface StudentData {
@@ -31,7 +32,9 @@ interface StudentData {
   guardianName: string
   guardianEmail: string
   guardianPhone: string
-  guardianPhoto: any
+  guardianPhoto: any 
+  guardianRelation: string 
+  guardianProfession : string
 }
 
 interface FormErrors {
@@ -47,10 +50,12 @@ interface FormErrors {
   expectedGraduation: string
   guardianName: string
   guardianEmail: string
-  guardianPhone: string
+  guardianPhone: string 
+  guardianRelation: string 
+  guardianProfession : string
 }
 
-export default function StudentGuardianModal({ isOpen, onClose, studentData }: StudentGuardianModalProps) {
+export default function StudentGuardianModal({ isOpen, onClose, studentData , handleDone }: StudentGuardianModalProps) {
   const [currentStep, setCurrentStep] = useState<"student" | "guardian">("student")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<StudentData>({
@@ -70,7 +75,9 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData }: S
     guardianName: "",
     guardianEmail: "",
     guardianPhone: "",
-    guardianPhoto: null,
+    guardianPhoto: null, 
+    guardianRelation: "", 
+    guardianProfession: "",
   })
 
   const [errors, setErrors] = useState<FormErrors>({
@@ -86,7 +93,9 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData }: S
     expectedGraduation: "",
     guardianName: "",
     guardianEmail: "",
-    guardianPhone: "",
+    guardianPhone: "", 
+    guardianRelation: "", 
+    guardianProfession : "",
   })
 
   const [studentPhotoPreview, setStudentPhotoPreview] = useState<string | null>(null)
@@ -138,7 +147,9 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData }: S
         guardianName: studentData.guardian.name || "",
         guardianEmail: studentData.guardian.email || "",
         guardianPhone: studentData.guardian.phone || "",
-        guardianPhoto: null,
+        guardianPhoto: null, 
+        guardianRelation: "", 
+        guardianProfession: "",
       })
     }
   }, [studentData])
@@ -341,10 +352,11 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData }: S
           guardianName: formData.guardianName || "",
           guardianEmail: formData.guardianEmail || "",
           guardianPhone: formData.guardianPhone || "",
-          guardianPhoto: formData.guardianPhoto ? "no" : "no",
+          guardianPhoto: formData.guardianPhoto ? "no" : "no", 
+          guardianRelation: formData.guardianRelation || "",
+          guardianProfession: formData.guardianProfession || "",
         };
-  
-        console.log("updateData", apiData);
+        console.log('api data', apiData)
         const response = await axios.put(
           `${process.env.NEXT_PUBLIC_SRS_SERVER}/student/${studentData._id}`,
           apiData
@@ -357,7 +369,8 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData }: S
           pauseOnHover: true,
           draggable: true,
         });
-        console.log("response", response);
+        await handleDone() 
+     
       } else {
         apiData = {
           rollNo: formData.rollNo || "",
@@ -376,14 +389,17 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData }: S
           guardianName: formData.guardianName || "",
           guardianEmail: formData.guardianEmail || "",
           guardianPhone: formData.guardianPhone || "",
-          guardianPhoto: formData.guardianPhoto ? "no" : "no",
+          guardianPhoto: formData.guardianPhoto ? "no" : "no", 
+          guardianRelation: formData.guardianRelation || "",
+          guardianProfession: formData.guardianProfession || "",
         };
   
         console.log("AddingData", apiData);
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_SRS_SERVER}/student/add`,
           apiData
-        );
+        ); 
+
         toast.success("Student added successfully", {
           position: "top-right",
           autoClose: 3000,
@@ -392,23 +408,22 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData }: S
           pauseOnHover: true,
           draggable: true,
         });
-      }
+        await handleDone()
+      } 
   
       resetForm();
       onClose();
     } catch (error) {
-      console.error("Error submitting student data:", error);
-      toast.error(
-        `Failed to ${studentData ? "update" : "add"} student. Please try again.`,
-        {
+      if (error.response && error.response.status === 409) {
+        toast.error("This Email is Already Registered", {
           position: "top-right",
           autoClose: 3000,
           hideProgressBar: false,
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
-        }
-      );
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -434,7 +449,9 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData }: S
       guardianName: "",
       guardianEmail: "",
       guardianPhone: "",
-      guardianPhoto: null,
+      guardianPhoto: null, 
+      guardianRelation: "", 
+      guardianProfession: "",
     })
     setStudentPhotoPreview(null)
     setGuardianPhotoPreview(null)
@@ -451,7 +468,9 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData }: S
       expectedGraduation: "",
       guardianName: "",
       guardianEmail: "",
-      guardianPhone: "",
+      guardianPhone: "", 
+      guardianRelation: "", 
+      guardianProfession: "",
     })
   }
 

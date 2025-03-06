@@ -5,21 +5,25 @@ import { Camera, Loader2, Upload, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label" 
+import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 
-interface GuardianFormProps { 
-  isEditing : any
+interface GuardianFormProps {
+  isEditing: any
   formData: {
     guardianName: string
     guardianEmail: string
     guardianPhone: string
+    guardianRelation: string
+    guardianProfession: string
     [key: string]: any
   }
   errors: {
     guardianName: any
     guardianEmail: string
     guardianPhone: string
+    guardianRelation: string
+    guardianProfession: string
     [key: string]: any
   }
   photoPreview: string | null
@@ -31,7 +35,7 @@ interface GuardianFormProps {
   disabled?: boolean
 }
 
-export function GuardianForm({ 
+export function GuardianForm({
   isEditing,
   formData,
   errors,
@@ -41,10 +45,8 @@ export function GuardianForm({
   onSubmit,
   onBack,
   isSubmitting = false,
-  disabled = false, 
-}: GuardianFormProps) 
- { 
- 
+  disabled = false,
+}: GuardianFormProps) {
   return (
     <div className="p-6 space-y-8">
       <div className="grid gap-8 lg:grid-cols-3">
@@ -150,6 +152,34 @@ export function GuardianForm({
               />
               {errors.guardianPhone && <p className="text-sm text-red-500 mt-1">{errors.guardianPhone}</p>}
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="relation">Relation</Label>
+              <Input
+                id="guardianRelation"
+                name="guardianRelation"
+                type="text"
+                placeholder="Enter guardian's Relation"
+                className={`border-gray-200 ${errors.guardianRelation ? "border-red-500" : ""}`}
+                value={formData.guardianRelation}
+                onChange={onInputChange}
+                disabled={disabled}
+              />
+              {errors.guardianRelation && <p className="text-sm text-red-500 mt-1">{errors.guardianRelation}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="guardianProfession">Profession</Label>
+              <Input
+                id="guardianProfession"
+                name="guardianProfession"
+                type="text"
+                placeholder="Enter guardian's profession"
+                className={`border-gray-200 ${errors.guardianProfession ? "border-red-500" : ""}`}
+                value={formData.guardianProfession}
+                onChange={onInputChange}
+                disabled={disabled}
+              />
+              {errors.guardianProfession && <p className="text-sm text-red-500 mt-1">{errors.guardianProfession}</p>}
+            </div>
 
             <Separator />
 
@@ -157,21 +187,18 @@ export function GuardianForm({
               <Button variant="outline" onClick={onBack} disabled={disabled}>
                 Back
               </Button>
-              <Button
-  className="bg-black text-white hover:bg-gray-800"
-  onClick={onSubmit}
-  disabled={disabled}
->
-  {isSubmitting ? (
-    <>
-      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-      {isEditing ? "Updating..." : "Submitting..."}
-    </>
-  ) : (
-    isEditing ? "Update" : "Submit"
-  )}
-</Button>
-
+              <Button className="bg-black text-white hover:bg-gray-800" onClick={onSubmit} disabled={disabled}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isEditing ? "Updating..." : "Submitting..."}
+                  </>
+                ) : isEditing ? (
+                  "Update"
+                ) : (
+                  "Submit"
+                )}
+              </Button>
             </div>
           </CardContent>
         </Card>
