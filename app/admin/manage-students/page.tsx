@@ -124,15 +124,13 @@ export default function StudentsTable() {
     if (key.startsWith("Guardian")) {
       const guardianKey = key.split(" ")[1].toLowerCase()
 
-      if (guardianKey === "name") {
-        return student.guardian && student.guardian.name ? student.guardian.name : "N/A"
-      }
-
-      const actualKey =
+          const actualKey =
         guardianKey === "email"
           ? "guardianEmail"
           : guardianKey === "phone"
-            ? "guardianPhone"
+            ? "guardianPhone" 
+           :  guardianKey === "name" 
+             ? "guardianName"
             : guardianKey === "password"
               ? "password"
               : `guardian${guardianKey.charAt(0).toUpperCase() + guardianKey.slice(1)}`
