@@ -135,9 +135,9 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData }: S
           : new Date().toISOString().split("T")[0],
         expectedGraduation: studentData.expectedGraduation || new Date().getFullYear().toString(),
         profilePhoto: null,
-        guardianName: studentData.guardianName || "",
-        guardianEmail: studentData.guardianEmail || "",
-        guardianPhone: studentData.guardianPhone || "",
+        guardianName: studentData.guardian.name || "",
+        guardianEmail: studentData.guardian.email || "",
+        guardianPhone: studentData.guardian.phone || "",
         guardianPhoto: null,
       })
     }
