@@ -353,8 +353,8 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
           guardianEmail: formData.guardianEmail || "",
           guardianPhone: formData.guardianPhone || "",
           guardianPhoto: formData.guardianPhoto ? "no" : "no", 
-          relation: formData.guardianRelation || "",
-          profession: formData.guardianProfession || "",
+          guardianRelation: formData.guardianRelation || "",
+          guardianProfession: formData.guardianProfession || "",
         };
         console.log('api data', apiData)
         const response = await axios.put(
@@ -390,15 +390,16 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
           guardianEmail: formData.guardianEmail || "",
           guardianPhone: formData.guardianPhone || "",
           guardianPhoto: formData.guardianPhoto ? "no" : "no", 
-          relation: formData.guardianRelation || "",
-          profession: formData.guardianProfession || "",
+          guardianRelation: formData.guardianRelation || "",
+          guardianProfession: formData.guardianProfession || "",
         };
   
         console.log("AddingData", apiData);
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_SRS_SERVER}/student/add`,
           apiData
-        ); 
+        );  
+        console.log('response',response)
 
         toast.success("Student added successfully", {
           position: "top-right",
