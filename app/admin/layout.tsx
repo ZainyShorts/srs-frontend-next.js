@@ -58,8 +58,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <main className="flex-1">{children}</main>
 
         {/* Toast Notification Container */}
-        <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
-      </div>
+        <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        limit={1}
+      />    </div>
     </div>
   )
 }

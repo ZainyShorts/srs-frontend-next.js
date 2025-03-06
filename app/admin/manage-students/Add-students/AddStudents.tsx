@@ -2,7 +2,7 @@
 
 import { useState, type ChangeEvent, useEffect } from "react"
 import axios from "axios"
-import { ToastContainer, toast } from "react-toastify"
+import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { StudentForm } from "./student-form"
@@ -353,8 +353,8 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
           guardianEmail: formData.guardianEmail || "",
           guardianPhone: formData.guardianPhone || "",
           guardianPhoto: formData.guardianPhoto ? "no" : "no", 
-          guardianRelation: formData.guardianRelation || "",
-          guardianProfession: formData.guardianProfession || "",
+          relation: formData.guardianRelation || "",
+          profession: formData.guardianProfession || "",
         };
         console.log('api data', apiData)
         const response = await axios.put(
@@ -390,8 +390,8 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
           guardianEmail: formData.guardianEmail || "",
           guardianPhone: formData.guardianPhone || "",
           guardianPhoto: formData.guardianPhoto ? "no" : "no", 
-          guardianRelation: formData.guardianRelation || "",
-          guardianProfession: formData.guardianProfession || "",
+          relation: formData.guardianRelation || "",
+          profession: formData.guardianProfession || "",
         };
   
         console.log("AddingData", apiData);
@@ -482,19 +482,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
 
   return (
     <>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-        style={{ zIndex: 10000 }}
-      />
+     
 
       <Dialog open={isOpen} onOpenChange={handleCloseRequest}>
         <DialogContent className="max-w-[95vw] sm:max-w-[80vw] md:max-w-[70vw] lg:max-w-5xl p-0">

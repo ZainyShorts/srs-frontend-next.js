@@ -1,12 +1,12 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { ChevronLeft, ChevronRight, Edit, Trash2, Plus, Copy, Check  ,Loader2 , FileText} from "lucide-react"
+import { ChevronLeft, ChevronRight, Edit, Trash2, Plus, Copy, Check, Loader2, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"  
-import { debounce } from "lodash"; 
+import { Input } from "@/components/ui/input"
+import { debounce } from "lodash"
 import { ExcelUploadModal } from "./Add-students/excellUpload"
-import { ToastContainer, toast } from "react-toastify"
+import { toast } from "react-toastify"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -21,7 +21,7 @@ export default function StudentsTable() {
   const [limit, setLimit] = useState(10)
   const [searchTerm, setSearchTerm] = useState("")
   const [classFilter, setClassFilter] = useState("all")
-  const [isModalOpen, setIsModalOpen] = useState(false) 
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [open, setOpen] = useState(false)
   const [editingStudent, setEditingStudent] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -42,30 +42,26 @@ export default function StudentsTable() {
       console.error("Error fetching student data:", error)
       setIsLoading(false)
     }
-  }, []) 
+  }, [])
   const fetchStudentDataByRollNo = useCallback(
     debounce(async (rollNo: any) => {
       try {
-        setIsLoading(true);
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_SRS_SERVER}/student?rollNo=${rollNo}`
-        );
-        console.log("response", response);
-        setStudents(response.data.data || []);
-        setTotalPages(response.data.totalPages || 0);
-        setTotalRecords(response.data.totalRecordsCount || 0);
-        setCurrentPage(response.data.currentPage || 1);
-        setLimit(response.data.limit || 10);
+        setIsLoading(true)
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student?rollNo=${rollNo}`)
+        console.log("response", response)
+        setStudents(response.data.data || [])
+        setTotalPages(response.data.totalPages || 0)
+        setTotalRecords(response.data.totalRecordsCount || 0)
+        setCurrentPage(response.data.currentPage || 1)
+        setLimit(response.data.limit || 10)
       } catch (error) {
-        console.error("Error fetching student data by roll number:", error);
+        console.error("Error fetching student data by roll number:", error)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    }, 500), 
-    []
-  );
-  
-  
+    }, 500),
+    [],
+  )
 
   useEffect(() => {
     fetchStudentData(currentPage)
@@ -95,7 +91,7 @@ export default function StudentsTable() {
     setTimeout(() => setCopiedId(null), 2000)
   }
 
-  const renderCellContent = (student, key) => {
+  const renderCellContent = (student : any, key : any) => {
     if (key === "createdAt" || key === "updatedAt") {
       return formatDate(student[key])
     }
@@ -127,7 +123,25 @@ export default function StudentsTable() {
 
     if (key.startsWith("Guardian")) {
       const guardianKey = key.split(" ")[1].toLowerCase()
-      return student.guardian ? String(student.guardian[guardianKey] || "") : "N/A"
+
+      if (guardianKey === "name") {
+        return student.guardian && student.guardian.name ? student.guardian.name : "N/A"
+      }
+
+      const actualKey =
+        guardianKey === "email"
+          ? "guardianEmail"
+          : guardianKey === "phone"
+            ? "guardianPhone"
+            : guardianKey === "password"
+              ? "password"
+              : `guardian${guardianKey.charAt(0).toUpperCase() + guardianKey.slice(1)}`
+
+      return student.guardian && student.guardian[actualKey]
+        ? actualKey === "password"
+          ? formatPassword(student.guardian[actualKey])
+          : student.guardian[actualKey]
+        : "N/A"
     }
 
     if (typeof student[key] === "object" && student[key] !== null) {
@@ -136,47 +150,41 @@ export default function StudentsTable() {
 
     return String(student[key] || "")
   }
-  const handleDelete = async (id : any) => {  
+  const handleDelete = async (id: any) => {
     setIsLoading(true)
 
-     const response = await axios.delete(
-      `${process.env.NEXT_PUBLIC_SRS_SERVER}/student/${id}`); 
-      console.log('response',response) 
-      toast.success("Student Deleted successfully", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });    
-     await fetchStudentData()
-     setIsLoading(false)
-
-     }
+    const response = await axios.delete(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student/${id}`)
+    console.log("response", response)
+    toast.success("Student Deleted successfully", {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    })
+    await fetchStudentData()
+    setIsLoading(false)
+  }
   return (
     <div className="container mx-auto py-10 p-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Students</h1>  
+        <h1 className="text-3xl font-bold">Students</h1>
         <div className="flex gap-2">
-        <Button
-          onClick={() => {
-            setEditingStudent(null)
-            setIsModalOpen(true)
-          }}
-          className="bg-black text-white hover:bg-gray-800"
-        >
-          <Plus className="mr-2 h-4 w-4" /> Add Student
-        </Button>
-        <Button
-  onClick={() => setOpen(true)}
-  className="bg-black text-white hover:bg-gray-800"
->
-  <FileText className="mr-2 h-4 w-4" /> Import Students
-</Button>
+          <Button
+            onClick={() => {
+              setEditingStudent(null)
+              setIsModalOpen(true)
+            }}
+            className="bg-black text-white hover:bg-gray-800"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Add Student
+          </Button>
+          <Button onClick={() => setOpen(true)} className="bg-black text-white hover:bg-gray-800">
+            <FileText className="mr-2 h-4 w-4" /> Import Students
+          </Button>
 
-<ExcelUploadModal open={open} onClose={() => setOpen(false)} onOpenChange={setOpen} />
- 
+          <ExcelUploadModal open={open} onClose={() => setOpen(false)} onOpenChange={setOpen} refetch={fetchStudentData} />
         </div>
       </div>
 
@@ -184,8 +192,10 @@ export default function StudentsTable() {
         <Input
           placeholder="Search students..."
           value={searchTerm}
-          onChange={(e) => {setSearchTerm(e.target.value);
-            fetchStudentDataByRollNo(e.target.value)}}
+          onChange={(e) => {
+            setSearchTerm(e.target.value)
+            fetchStudentDataByRollNo(e.target.value)
+          }}
           className="max-w-sm"
         />
         <Select value={classFilter} onValueChange={setClassFilter}>
@@ -205,10 +215,10 @@ export default function StudentsTable() {
 
       {isLoading ? (
         <div className="flex justify-center items-center py-20">
-        <div className="border-gray-900">
-          <Loader2 className="animate-spin" />
+          <div className="border-gray-900">
+            <Loader2 className="animate-spin" />
+          </div>
         </div>
-      </div>
       ) : students.length === 0 ? (
         <div className="text-center py-10">No students found</div>
       ) : (
@@ -246,7 +256,7 @@ export default function StudentsTable() {
                     </Button>
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
-                    <Button onClick={()=>handleDelete(student._id)} variant="ghost" size="sm">
+                    <Button onClick={() => handleDelete(student._id)} variant="ghost" size="sm">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
@@ -285,7 +295,12 @@ export default function StudentsTable() {
         </div>
       </div>
 
-      <StudentGuardianModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} studentData={editingStudent} handleDone={fetchStudentData}/>
+      <StudentGuardianModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        studentData={editingStudent}
+        handleDone={fetchStudentData}
+      />
     </div>
   )
 }

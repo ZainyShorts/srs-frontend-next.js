@@ -19,7 +19,7 @@ export default function StudentProfile() {
     const fetchStudentData = async () => {
       try {
         setIsLoading(true)
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student/2342342342211`)
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student/67c9981f65ada86870004dd2`)
         console.log("response", response)
         setStudent(response.data || null)
       } catch (error) {
