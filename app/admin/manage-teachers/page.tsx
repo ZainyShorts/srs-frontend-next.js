@@ -77,25 +77,45 @@ export default function TeachersTable() {
     setSelectedTeacher(null)
   }
 
+  // const fetchTeacherByEmail = useCallback(
+  //    debounce(async (email: any) => {
+  //      try {
+  //       setLoading(true)
+  //        const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers?email=${email}`)
+  //        console.log("response", response)
+  //        setTeachers(response.data.data || [])
+  //       //  setTotalPages(response.data.totalPages || 0)
+  //       //  setTotalRecords(response.data.totalRecordsCount || 0)
+  //        setCurrentPage(response.data.currentPage || 1)
+  //       //  setLimit(response.data.limit || 10)
+  //      } catch (error) {
+  //        console.error("Error fetching student data by roll number:", error)
+  //      } finally {
+  //       setLoading(false)
+  //      }
+  //    }, 500)
+  //    [],
+  //  )
+
   const fetchTeacherByEmail = useCallback(
-     debounce(async (email: any) => {
-       try {
-        setLoading(true)
-         const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers?email=${email}`)
-         console.log("response", response)
-         setTeachers(response.data.data || [])
-        //  setTotalPages(response.data.totalPages || 0)
-        //  setTotalRecords(response.data.totalRecordsCount || 0)
-         setCurrentPage(response.data.currentPage || 1)
-        //  setLimit(response.data.limit || 10)
-       } catch (error) {
-         console.error("Error fetching student data by roll number:", error)
-       } finally {
-        setLoading(false)
-       }
-     }, 500)
-     [],
-   )
+    debounce(async (email: any) => {
+      try {
+        setLoading(true);
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers?email=${email}`
+        );
+        console.log("response", response);
+        setTeachers(response.data.data || []);
+        setCurrentPage(response.data.currentPage || 1);
+      } catch (error) {
+        console.error("Error fetching teacher data by email:", error);
+      } finally {
+        setLoading(false);
+      }
+    }, 500),
+    [] // Corrected dependency array placement
+  );
+  
 
   const pageCount = Math.ceil(teachers.length / 10)
   const currentTeachers = teachers.slice((currentPage - 1) * 10, currentPage * 10)
