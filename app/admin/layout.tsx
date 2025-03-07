@@ -29,7 +29,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: "Manage Students", href: "/admin/manage-students", icon: UserPlus },
     { name: "Manage Teachers", href: "/admin/manage-teachers", icon: Plus },
     { name: "Generate Report", href: "/admin/generate-report", icon: FileText },
-    { name: "Recent Activity", href: "/admin/activities", icon: Calendar },
+    { name: "Recent Activity", href: "/admin/activities", icon: Calendar }, 
+    { name: "Add Course", href: "/admin/add-course", icon: Plus },
+
   ]
 
   if (!isMounted) {

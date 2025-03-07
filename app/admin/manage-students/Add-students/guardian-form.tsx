@@ -131,10 +131,10 @@ export function GuardianForm({
                 name="guardianEmail"
                 type="email"
                 placeholder="Enter guardian's email address"
-                className={`border-gray-200 ${errors.guardianEmail ? "border-red-500" : ""}`}
+                className={`border-gray-200 ${errors.guardianEmail ? "border-red-500" : ""} ${isEditing ? "bg-gray-100 cursor-not-allowed" : ""}`}
                 value={formData.guardianEmail}
                 onChange={onInputChange}
-                disabled={disabled}
+                disabled={disabled || isEditing}
               />
               {errors.guardianEmail && <p className="text-sm text-red-500 mt-1">{errors.guardianEmail}</p>}
             </div>

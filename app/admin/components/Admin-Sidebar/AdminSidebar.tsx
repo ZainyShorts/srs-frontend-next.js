@@ -56,6 +56,16 @@ const AdminSidebar = ({isSidebarOpen,setIsSidebarOpen}:{isSidebarOpen:boolean,se
       name: "Recent Activity",
       href: "/admin/activities",
       icon: Calendar,
+    }, 
+    {
+      name: "Add Course",
+      href: "/admin/add-course",
+      icon: Plus,
+    }, 
+    {
+      name: "Schedule Course",
+      href: "/admin/schedule-course",
+      icon: Plus,
     },
   ]
 

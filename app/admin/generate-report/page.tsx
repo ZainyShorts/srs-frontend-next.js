@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Download, FileText, Filter, Printer, Search } from 'lucide-react'
+import { Download, FileText, Filter, Printer, Search } from "lucide-react"
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
@@ -48,8 +48,31 @@ interface Student {
   profilePhoto: string
 }
 
-interface ApiResponse {
+interface Teacher {
+  _id: string
+  employeeId: string
+  firstName: string
+  lastName: string
+  department: string
+  gender: string
+  email: string
+  phone: string
+  address: string
+  joiningDate: string
+  specialization: string
+  profilePhoto: string
+}
+
+interface StudentApiResponse {
   data: Student[]
+  totalPages: number
+  totalRecordsCount: number
+  currentPage: number
+  limit: number
+}
+
+interface TeacherApiResponse {
+  data: Teacher[]
   totalPages: number
   totalRecordsCount: number
   currentPage: number
@@ -61,8 +84,10 @@ export default function ReportsPage() {
   const [startDate, setStartDate] = useState<string>("")
   const [endDate, setEndDate] = useState<string>("")
   const [gradeLevel, setGradeLevel] = useState<string>("")
+  const [department, setDepartment] = useState<string>("")
 
   const [students, setStudents] = useState<Student[]>([])
+  const [teachers, setTeachers] = useState<Teacher[]>([])
   const [pagination, setPagination] = useState({
     totalPages: 0,
     currentPage: 1,
@@ -79,8 +104,12 @@ export default function ReportsPage() {
   const buildQueryParams = (customLimit?: number) => {
     const params = new URLSearchParams()
 
-    if (gradeLevel) {
+    if (reportType === "student" && gradeLevel) {
       params.append("className", gradeLevel)
+    }
+
+    if (reportType === "teacher" && department) {
+      params.append("department", department)
     }
 
     if (startDate) {
@@ -98,73 +127,112 @@ export default function ReportsPage() {
     return params.toString()
   }
 
-  const fetchStudents = async () => {
-    if (reportType !== "student" || !gradeLevel) return
-
+  const fetchData = async () => {
     setLoading(true)
     setError(null)
+    setHasAppliedFilters(true)
 
     try {
-      const queryParams = buildQueryParams()
-      const response = await fetch(`http://213.210.37.77:3014/student?${queryParams}`)
+      const hasFilters =
+        startDate || endDate || (reportType === "student" && gradeLevel) || (reportType === "teacher" && department)
+      const queryParams = hasFilters ? buildQueryParams() : ""
+      let response
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch students")
+      if (reportType === "student") {
+        response = await fetch(`http://213.210.37.77:3014/student${queryParams ? `?${queryParams}` : ""}`)
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch students")
+        }
+
+        const data: StudentApiResponse = await response.json()
+        setStudents(data.data)
+        setTeachers([])
+        setPagination({
+          totalPages: data.totalPages,
+          currentPage: data.currentPage,
+          totalRecords: data.totalRecordsCount,
+          limit: data.limit,
+        })
+      } else {
+        response = await fetch(`http://213.210.37.77:3014/teachers${queryParams ? `?${queryParams}` : ""}`)
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch teachers")
+        }
+
+        const data: TeacherApiResponse = await response.json()
+        setTeachers(data.data)
+        setStudents([])
+        setPagination({
+          totalPages: data.totalPages,
+          currentPage: data.currentPage,
+          totalRecords: data.totalRecordsCount,
+          limit: data.limit,
+        })
       }
-
-      const data: ApiResponse = await response.json()
-
-      setStudents(data.data)
-      setPagination({
-        totalPages: data.totalPages,
-        currentPage: data.currentPage,
-        totalRecords: data.totalRecordsCount,
-        limit: data.limit,
-      })
-      setHasAppliedFilters(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
       setStudents([])
+      setTeachers([])
     } finally {
       setLoading(false)
     }
   }
 
   const exportData = async (limit: number) => {
-    if (reportType !== "student" || !gradeLevel) {
-      throw new Error("Please select report type and grade level")
+    const hasFilters =
+      startDate || endDate || (reportType === "student" && gradeLevel) || (reportType === "teacher" && department)
+    const queryParams = hasFilters ? buildQueryParams(limit) : limit ? `limit=${limit}` : ""
+
+    if (reportType === "student") {
+      const response = await fetch(`http://213.210.37.77:3014/student${queryParams ? `?${queryParams}` : ""}`)
+
+      if (!response.ok) {
+        throw new Error("Failed to export students")
+      }
+
+      const data: StudentApiResponse = await response.json()
+
+      return data.data.map((student) => ({
+        "Roll No": student.rollNo,
+        Name: `${student.firstName} ${student.lastName}`,
+        Class: student.class,
+        Section: student.section,
+        Gender: student.gender,
+        Email: student.email,
+        Phone: student.phone,
+        "Enroll Date": formatDate(student.enrollDate),
+        "Guardian Name": student.guardian.guardianName,
+        "Guardian Relation": student.guardian.guardianRelation,
+        "Guardian Phone": student.guardian.guardianPhone,
+        "Guardian Email": student.guardian.guardianEmail,
+        Address: student.address,
+        "Expected Graduation": formatDate(student.expectedGraduation),
+      }))
+    } else {
+      const response = await fetch(`http://213.210.37.77:3014/teachers${queryParams ? `?${queryParams}` : ""}`)
+      if (!response.ok) {
+        throw new Error("Failed to export teachers")
+      }
+
+      const data: TeacherApiResponse = await response.json()
+
+      return data.data.map((teacher) => ({
+        "Employee ID": teacher._id,
+        Name: `${teacher.firstName} ${teacher.lastName}`,
+        Department: teacher.department,
+        Gender: teacher.gender,
+        Email: teacher.email,
+        Phone: teacher.phone,
+        qualification: teacher.qualification,
+        Address: teacher.address,
+      }))
     }
-
-    const queryParams = buildQueryParams(limit)
-    const response = await fetch(`http://213.210.37.77:3014/student?${queryParams}`)
-
-    if (!response.ok) {
-      throw new Error("Failed to export students")
-    }
-
-    const data: ApiResponse = await response.json()
-
-    // Transform data for export
-    return data.data.map((student) => ({
-      "Roll No": student.rollNo,
-      Name: `${student.firstName} ${student.lastName}`,
-      Class: student.class,
-      Section: student.section,
-      Gender: student.gender,
-      Email: student.email,
-      Phone: student.phone,
-      "Enroll Date": formatDate(student.enrollDate),
-      "Guardian Name": student.guardian.guardianName,
-      "Guardian Relation": student.guardian.guardianRelation,
-      "Guardian Phone": student.guardian.guardianPhone,
-      "Guardian Email": student.guardian.guardianEmail,
-      Address: student.address,
-      "Expected Graduation": formatDate(student.expectedGraduation),
-    }))
   }
 
   const handleApplyFilters = () => {
-    fetchStudents()
+    fetchData()
   }
 
   const filteredStudents = students.filter((student) => {
@@ -176,6 +244,18 @@ export default function ReportsPage() {
       student.lastName.toLowerCase().includes(searchLower) ||
       student.rollNo.toLowerCase().includes(searchLower) ||
       student.email.toLowerCase().includes(searchLower)
+    )
+  })
+
+  const filteredTeachers = teachers.filter((teacher) => {
+    if (!searchTerm) return true
+
+    const searchLower = searchTerm.toLowerCase()
+    return (
+      teacher.firstName.toLowerCase().includes(searchLower) ||
+      teacher.lastName.toLowerCase().includes(searchLower) ||
+      teacher.employeeId.toLowerCase().includes(searchLower) ||
+      teacher.email.toLowerCase().includes(searchLower)
     )
   })
 
@@ -203,7 +283,9 @@ export default function ReportsPage() {
             <Button
               className="h-10 bg-black text-white hover:bg-gray-800"
               onClick={() => setIsExportModalOpen(true)}
-              disabled={!hasAppliedFilters || students.length === 0}
+              disabled={
+                !hasAppliedFilters || (reportType === "student" ? students.length === 0 : teachers.length === 0)
+              }
             >
               <Download className="mr-2 h-4 w-4" />
               Export
@@ -220,7 +302,17 @@ export default function ReportsPage() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label>Report Type</Label>
-                <Select value={reportType} onValueChange={setReportType}>
+                <Select
+                  value={reportType}
+                  onValueChange={(value) => {
+                    setReportType(value)
+                    setHasAppliedFilters(false)
+                    setStudents([])
+                    setTeachers([])
+                    setGradeLevel("")
+                    setDepartment("")
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select report type" />
                   </SelectTrigger>
@@ -250,19 +342,33 @@ export default function ReportsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Grade Level</Label>
-                <Select value={gradeLevel} onValueChange={setGradeLevel}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select grade level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Classes</SelectItem>
-                    <SelectItem value="9">Class 9</SelectItem>
-                    <SelectItem value="10">Class 10</SelectItem>
-                    <SelectItem value="11">Class 11</SelectItem>
-                    <SelectItem value="12">Class 12</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>{reportType === "student" ? "Grade Level" : "Select Departments"}</Label>
+                {reportType === "student" ? (
+                  <Select value={gradeLevel} onValueChange={setGradeLevel}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select grade level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="9">Class 9</SelectItem>
+                      <SelectItem value="10">Class 10</SelectItem>
+                      <SelectItem value="11">Class 11</SelectItem>
+                      <SelectItem value="12">Class 12</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Select value={department} onValueChange={setDepartment}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Mathematics">Mathematics</SelectItem>
+                      <SelectItem value="Science">Science</SelectItem>
+                      <SelectItem value="English">English</SelectItem>
+                      <SelectItem value="History">History</SelectItem>
+                      <SelectItem value="Cardiology">Cardiology</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <Separator />
@@ -270,7 +376,7 @@ export default function ReportsPage() {
               <Button
                 className="w-full bg-black text-white hover:bg-gray-800"
                 onClick={handleApplyFilters}
-                disabled={loading || (reportType === "student" && !gradeLevel)}
+                disabled={loading}
               >
                 {loading ? (
                   <span className="animate-pulse">Loading...</span>
@@ -296,7 +402,7 @@ export default function ReportsPage() {
                     className="pl-8"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    disabled={students.length === 0}
+                    disabled={reportType === "student" ? students.length === 0 : teachers.length === 0}
                   />
                 </div>
               </div>
@@ -327,7 +433,7 @@ export default function ReportsPage() {
                     <p className="text-sm text-gray-500">Please wait while we fetch the report data...</p>
                   </div>
                 </div>
-              ) : students.length === 0 ? (
+              ) : reportType === "student" && students.length === 0 ? (
                 <div className="rounded-lg border border-gray-200 bg-white p-8 text-center">
                   <div className="mb-6">
                     <FileText className="mx-auto mb-4 h-12 w-12 text-gray-400" />
@@ -335,7 +441,15 @@ export default function ReportsPage() {
                     <p className="text-sm text-gray-500">Try adjusting your filters to find students.</p>
                   </div>
                 </div>
-              ) : (
+              ) : reportType === "teacher" && teachers.length === 0 ? (
+                <div className="rounded-lg border border-gray-200 bg-white p-8 text-center">
+                  <div className="mb-6">
+                    <FileText className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+                    <h3 className="text-lg font-semibold">No Teachers Found</h3>
+                    <p className="text-sm text-gray-500">Try adjusting your filters to find teachers.</p>
+                  </div>
+                </div>
+              ) : reportType === "student" ? (
                 <div className="rounded-lg border border-gray-200 bg-white">
                   <div className="overflow-x-auto">
                     <Table>
@@ -404,6 +518,65 @@ export default function ReportsPage() {
                     Showing {filteredStudents.length} of {pagination.totalRecords} students
                   </div>
                 </div>
+              ) : (
+                <div className="rounded-lg border border-gray-200 bg-white">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[100px] whitespace-nowrap">Employee ID</TableHead>
+                          <TableHead className="w-[150px] whitespace-nowrap">Name</TableHead>
+                          <TableHead className="w-[150px] whitespace-nowrap">Department</TableHead>
+                          <TableHead className="w-[100px] whitespace-nowrap">Gender</TableHead>
+                          <TableHead className="w-[200px] whitespace-nowrap">Email</TableHead>
+                          <TableHead className="w-[120px] whitespace-nowrap">Phone</TableHead>
+                          <TableHead className="w-[200px] whitespace-nowrap">Address</TableHead>
+                          <TableHead className="w-[200px] whitespace-nowrap">Qualification</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredTeachers.map((teacher) => (
+                          <TableRow key={teacher._id}>
+                            <TableCell className="font-medium whitespace-nowrap">{teacher._id}</TableCell>
+                            <TableCell className="whitespace-nowrap">{`${teacher.firstName} ${teacher.lastName}`}</TableCell>
+                            <TableCell className="whitespace-nowrap">{teacher.department}</TableCell>
+                            <TableCell className="whitespace-nowrap">{teacher.gender}</TableCell>
+                            <TableCell className="whitespace-nowrap">{teacher.email}</TableCell>
+                            <TableCell className="whitespace-nowrap">{teacher.phone}</TableCell>
+                            <TableCell className="whitespace-nowrap">{teacher.address}</TableCell>
+                            <TableCell className="whitespace-nowrap">{teacher.qualification}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {pagination.totalPages > 1 && (
+                    <div className="py-4">
+                      <Pagination>
+                        <PaginationContent>
+                          <PaginationItem>
+                            <PaginationPrevious href="#" />
+                          </PaginationItem>
+                          {Array.from({ length: pagination.totalPages }).map((_, i) => (
+                            <PaginationItem key={i}>
+                              <PaginationLink href="#" isActive={pagination.currentPage === i + 1}>
+                                {i + 1}
+                              </PaginationLink>
+                            </PaginationItem>
+                          ))}
+                          <PaginationItem>
+                            <PaginationNext href="#" />
+                          </PaginationItem>
+                        </PaginationContent>
+                      </Pagination>
+                    </div>
+                  )}
+
+                  <div className="p-4 text-sm text-gray-500 border-t">
+                    Showing {filteredTeachers.length} of {pagination.totalRecords} teachers
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -416,7 +589,7 @@ export default function ReportsPage() {
         onExport={exportData}
         currentFilters={{
           reportType,
-          gradeLevel,
+          gradeLevel: reportType === "student" ? gradeLevel : department,
           startDate,
           endDate,
         }}
@@ -424,3 +597,4 @@ export default function ReportsPage() {
     </div>
   )
 }
+

@@ -144,12 +144,12 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
           : new Date().toISOString().split("T")[0],
         expectedGraduation: studentData.expectedGraduation || new Date().getFullYear().toString(),
         profilePhoto: null,
-        guardianName: studentData.guardian.name || "",
-        guardianEmail: studentData.guardian.email || "",
-        guardianPhone: studentData.guardian.phone || "",
-        guardianPhoto: null, 
-        guardianRelation: "", 
-        guardianProfession: "",
+        guardianName: studentData.guardian.guardianName || "",
+        guardianEmail: studentData.guardian.guardianEmail || "",
+        guardianPhone: studentData.guardian.guardianPhone || "",
+        guardianPhoto: "no", 
+        guardianRelation: studentData.guardian.guardianRelation , 
+        guardianProfession:studentData.guardian.guardianProfession ,
       })
     }
   }, [studentData])
@@ -169,7 +169,10 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: "" }))
     }
-  }
+  } 
+  useEffect(()=>{ 
+   console.log('student',studentData)
+  },[studentData])
 
   const handleStudentPhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -360,7 +363,11 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
         const response = await axios.put(
           `${process.env.NEXT_PUBLIC_SRS_SERVER}/student/${studentData._id}`,
           apiData
-        );
+        ); 
+        if (response.data.status == 409) {
+                toast.error(response.data.msg);
+              } 
+              else {
         toast.success("Student updated successfully", {
           position: "top-right",
           autoClose: 3000,
@@ -370,7 +377,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
           draggable: true,
         });
         await handleDone() 
-     
+      }
       } else {
         apiData = {
           rollNo: formData.rollNo || "",
@@ -399,7 +406,11 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
           `${process.env.NEXT_PUBLIC_SRS_SERVER}/student/add`,
           apiData
         );  
-        console.log('response',response)
+        console.log('response',response) 
+        if (response.data.status == 409) {
+          toast.error(response.data.msg);
+        }  
+        else {
 
         toast.success("Student added successfully", {
           position: "top-right",
@@ -410,10 +421,11 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
           draggable: true,
         });
         await handleDone()
-      } 
-  
+      }  
+      
       resetForm();
       onClose();
+    }
     } catch (error) {
       if (error.response && error.response.status === 409) {
         toast.error("This Email is Already Registered", {
@@ -513,7 +525,8 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
                     onPhotoChange={handleStudentPhotoChange}
                     onContinue={handleContinueToGuardian}
                     onCancel={onClose}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting} 
+                    isEditing={!!studentData}
                   />
                 </div>
                 <div className="w-1/2 flex-shrink-0">

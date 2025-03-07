@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Loader2, Upload, X } from "lucide-react"
+import { Loader2, Upload, X } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import axios from "axios"
@@ -16,7 +16,7 @@ interface ExcelUploadModalProps {
   refetch: () => void
 }
 
-export function ExcelUploadModal({ open, onOpenChange, onClose, refetch }: ExcelUploadModalProps) {
+export function TeachersExcelUploadModal({ open, onOpenChange, onClose, refetch }: ExcelUploadModalProps) {
   const [file, setFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadComplete, setUploadComplete] = useState(false)
@@ -40,14 +40,14 @@ export function ExcelUploadModal({ open, onOpenChange, onClose, refetch }: Excel
   
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_SRS_SERVER}/student/import`,
+        `${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers/import`,
         formData
       );
   
       setUploadComplete(true);
   
       if (response.data.status == 409) {
-        toast.error(response.data.msg);
+              toast.error(response.data.msg);
       } else {
         toast.success(response.data.message || "Upload Successful!");
         setFile(null);
@@ -59,7 +59,7 @@ export function ExcelUploadModal({ open, onOpenChange, onClose, refetch }: Excel
       }
     } catch (error: any) {
       if (error.response?.status === 409) {
-        toast.error("Student is already registered.");
+        toast.error("Teacher is already registered.");
       } else {
         toast.error("Error uploading file. Please try again.");
       }
@@ -68,7 +68,6 @@ export function ExcelUploadModal({ open, onOpenChange, onClose, refetch }: Excel
     }
   };
   
-
   const handleModalChange = (isOpen: boolean) => {
     onOpenChange(isOpen)
 
@@ -86,7 +85,7 @@ export function ExcelUploadModal({ open, onOpenChange, onClose, refetch }: Excel
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Upload Excel File</DialogTitle>
-          <DialogDescription>Upload up to 1000 students at once</DialogDescription>
+          <DialogDescription>Upload up to 1000 teachers at once</DialogDescription>
         </DialogHeader>
         <div className="grid gap-6 py-4">
           {!file ? (
@@ -145,4 +144,3 @@ export function ExcelUploadModal({ open, onOpenChange, onClose, refetch }: Excel
     </Dialog>
   )
 }
-

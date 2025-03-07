@@ -1,7 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import { Camera, CheckCircle, Mail, Phone, Upload, User } from 'lucide-react'
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import axios from "axios"
+import { Camera, Upload, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,52 +14,136 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { toast } from "react-toastify"
+
+interface Teacher {
+  _id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  department: string
+  gender: string
+  address: string
+  qualification: string
+}
 
 interface AddTeacherModalProps {
   isOpen: boolean
   onClose: () => void
+  teacherData?: Teacher | null
+  onSuccess: () => void
 }
 
-export default function AddTeacherModal({ isOpen, onClose }: AddTeacherModalProps) {
-  const [step, setStep] = useState(1)
+export default function AddTeacherModal({ isOpen, onClose, teacherData, onSuccess }: AddTeacherModalProps) {
+  const [isLoading, setIsLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    gender: "Male",
+    phone: "",
+    email: "",
+    department: "",
+    address: "",
+    qualification: "",
+  })
 
-  const handleContinue = () => {
-    if (step < 3) {
-      setStep(step + 1)
+  useEffect(() => {
+    if (teacherData) {
+      setFormData({
+        firstName: teacherData.firstName,
+        lastName: teacherData.lastName,
+        gender: teacherData.gender,
+        phone: teacherData.phone,
+        email: teacherData.email,
+        department: teacherData.department,
+        address: teacherData.address || "",
+        qualification: teacherData.qualification || "",
+      })
     } else {
-      // Handle form submission here
-      onClose()
-      setStep(1)
+      setFormData({
+        firstName: "",
+        lastName: "",
+        gender: "Male",
+        phone: "",
+        email: "",
+        department: "",
+        address: "",
+        qualification: "",
+      })
     }
+  }, [teacherData])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target
+    setFormData((prev) => ({ ...prev, [id]: value }))
   }
 
+  const handleSelectChange = (value: string, field: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleRadioChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, gender: value }))
+  }
+
+  const handleSubmit = async () => {
+    try {
+      setIsLoading(true)
+
+      if (teacherData?._id) {
+        const response = await axios.put(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers/${teacherData._id}`, formData)
+        console.log(response) 
+         if (response.data.status == 409) {
+                  toast.error(response.data.msg);
+                }  
+                else {
+        toast.success("Teacher updated successfully!") 
+                }
+      } else {
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers/add`, formData)
+        console.log(response) 
+         if (response.data.status == 409) {
+                  toast.error(response.data.msg);
+                }   
+                else {
+
+        toast.success("Teacher added successfully!")
+      } 
+    }
+
+      onSuccess()
+      onClose()
+      setFormData({
+        firstName: "",
+        lastName: "",
+        gender: "Male",
+        phone: "",
+        email: "",
+        department: "",
+        address: "",
+        qualification: "",
+      })
+    } catch (error: any) {
+      console.error("Error saving teacher:", error)
+
+      if (error.response && error.response.status === 409) {
+        toast.error("This email is already registered to another teacher")
+      } else {
+        toast.error(teacherData ? "Failed to update teacher" : "Failed to add teacher")
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[95vw] sm:max-w-[80vw] md:max-w-[70vw] lg:max-w-5xl p-6">
         <div className="custom-scrollbar max-h-[80vh] overflow-y-auto">
           <DialogHeader className="p-6 pb-0">
-            <DialogTitle>Add New Teacher</DialogTitle>
+            <DialogTitle>{teacherData ? "Edit Teacher" : "Add New Teacher"}</DialogTitle>
           </DialogHeader>
           <div className="p-6 space-y-8">
-            {/* Progress Steps */}
-            <div className="flex justify-between">
-              {["Personal Details", "Professional Info", "Subjects & Schedule"].map((stepName, index) => (
-                <div key={stepName} className="flex items-center">
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full border-2 ${
-                        index + 1 <= step ? "border-black bg-black text-white" : "border-gray-200 bg-white"
-                      }`}
-                    >
-                      {index + 1 <= step ? <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" /> : index + 1}
-                    </div>
-                    <span className="mt-2 text-xs sm:text-sm font-medium">{stepName}</span>
-                  </div>
-                  {index < 2 && <div className="mx-2 sm:mx-4 h-[2px] w-12 sm:w-24 bg-gray-200" />}
-                </div>
-              ))}
-            </div>
-
             <div className="grid gap-8 lg:grid-cols-3">
               {/* Photo Upload */}
               <Card className="lg:col-span-1">
@@ -80,19 +167,6 @@ export default function AddTeacherModal({ isOpen, onClose }: AddTeacherModalProp
                   </div>
 
                   <Separator />
-
-                  {/* Quick Contact */}
-                  <div className="space-y-4">
-                    <h3 className="font-medium">Quick Contact</h3>
-                    <div className="flex items-center space-x-2 rounded-lg border bg-gray-50 p-3">
-                      <Mail className="h-5 w-5 text-gray-500" />
-                      <span className="text-sm text-gray-600">Send Welcome Email</span>
-                    </div>
-                    <div className="flex items-center space-x-2 rounded-lg border bg-gray-50 p-3">
-                      <Phone className="h-5 w-5 text-gray-500" />
-                      <span className="text-sm text-gray-600">Schedule Call</span>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
 
@@ -105,23 +179,35 @@ export default function AddTeacherModal({ isOpen, onClose }: AddTeacherModalProp
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">First Name</Label>
-                      <Input id="firstName" placeholder="Enter first name" className="border-gray-200" />
+                      <Input
+                        id="firstName"
+                        placeholder="Enter first name"
+                        className="border-gray-200"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="lastName">Last Name</Label>
-                      <Input id="lastName" placeholder="Enter last name" className="border-gray-200" />
+                      <Input
+                        id="lastName"
+                        placeholder="Enter last name"
+                        className="border-gray-200"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                      />
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label>Gender</Label>
-                    <RadioGroup defaultValue="male" className="flex space-x-4">
+                    <RadioGroup value={formData.gender} onValueChange={handleRadioChange} className="flex space-x-4">
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="male" id="male" />
+                        <RadioGroupItem value="Male" id="male" />
                         <Label htmlFor="male">Male</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="female" id="female" />
+                        <RadioGroupItem value="Female" id="female" />
                         <Label htmlFor="female">Female</Label>
                       </div>
                     </RadioGroup>
@@ -130,44 +216,83 @@ export default function AddTeacherModal({ isOpen, onClose }: AddTeacherModalProp
                   <div className="grid gap-6 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="email">Email Address</Label>
-                      <Input id="email" type="email" placeholder="Enter email" className="border-gray-200" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="Enter email"
+                        className={`border-gray-200 ${teacherData ? "opacity-70" : ""}`}
+                        value={formData.email}
+                        onChange={handleChange}
+                        disabled={!!teacherData}
+                        style={teacherData ? { cursor: "not-allowed" } : undefined}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number</Label>
-                      <Input id="phone" type="tel" placeholder="Enter phone number" className="border-gray-200" />
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="Enter phone number"
+                        className="border-gray-200"
+                        value={formData.phone}
+                        onChange={handleChange}
+                      />
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="department">Department</Label>
-                    <Select>
+                    <Select
+                      value={formData.department}
+                      onValueChange={(value) => handleSelectChange(value, "department")}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select department" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="mathematics">Mathematics</SelectItem>
-                        <SelectItem value="science">Science</SelectItem>
-                        <SelectItem value="english">English</SelectItem>
-                        <SelectItem value="history">History</SelectItem>
+                        <SelectItem value="Mathematics">Mathematics</SelectItem>
+                        <SelectItem value="Science">Science</SelectItem>
+                        <SelectItem value="English">English</SelectItem>
+                        <SelectItem value="History">History</SelectItem>
+                        <SelectItem value="Cardiology">Cardiology</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="qualifications">Qualifications</Label>
+                    <Label htmlFor="address">Address</Label>
                     <Textarea
-                      id="qualifications"
+                      id="address"
+                      placeholder="Enter address"
+                      className="min-h-[80px] border-gray-200"
+                      value={formData.address}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="qualification">Qualifications</Label>
+                    <Textarea
+                      id="qualification"
                       placeholder="Enter academic qualifications"
                       className="min-h-[100px] border-gray-200"
+                      value={formData.qualification}
+                      onChange={handleChange}
                     />
                   </div>
 
                   <Separator />
 
                   <div className="flex justify-end space-x-4">
-                    <Button variant="outline" onClick={onClose}>Cancel</Button>
-                    <Button className="bg-black text-white hover:bg-gray-800" onClick={handleContinue}>
-                      {step === 3 ? "Submit" : "Continue"}
+                    <Button variant="outline" onClick={onClose}>
+                      Cancel
+                    </Button>
+                    <Button
+                      className="bg-black text-white hover:bg-gray-800"
+                      onClick={handleSubmit}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Submitting..." : teacherData ? "Update" : "Submit"}
                     </Button>
                   </div>
                 </CardContent>
@@ -196,3 +321,4 @@ export default function AddTeacherModal({ isOpen, onClose }: AddTeacherModalProp
     </Dialog>
   )
 }
+

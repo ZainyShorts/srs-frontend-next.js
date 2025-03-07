@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 
-interface StudentFormProps { 
+interface StudentFormProps {
   formData: {
     rollNo: string
     firstName: string
@@ -33,6 +33,7 @@ interface StudentFormProps {
     lastName: string
     class: string
     section: string
+    gender: string
     dob: string
     email: string
     phone: string
@@ -47,9 +48,10 @@ interface StudentFormProps {
   onContinue: () => void
   onCancel: () => void
   disabled?: boolean
+  isEditing?: boolean
 }
 
-export function StudentForm({ 
+export function StudentForm({
   formData,
   errors,
   photoPreview,
@@ -59,6 +61,7 @@ export function StudentForm({
   onContinue,
   onCancel,
   disabled = false,
+  isEditing = false,
 }: StudentFormProps) {
   return (
     <div className="p-6 space-y-8">
@@ -190,10 +193,10 @@ export function StudentForm({
                   id="rollNo"
                   name="rollNo"
                   placeholder="Enter roll number"
-                  className={`border-gray-200 ${errors.rollNo ? "border-red-500" : ""}`}
+                  className={`border-gray-200 ${errors.rollNo ? "border-red-500" : ""} ${isEditing ? "bg-gray-100 cursor-not-allowed" : ""}`}
                   value={formData.rollNo}
                   onChange={onInputChange}
-                  disabled={disabled}
+                  disabled={disabled || isEditing}
                 />
                 {errors.rollNo && <p className="text-sm text-red-500 mt-1">{errors.rollNo}</p>}
               </div>
@@ -282,10 +285,10 @@ export function StudentForm({
                   name="email"
                   type="email"
                   placeholder="Enter email address"
-                  className={`border-gray-200 ${errors.email ? "border-red-500" : ""}`}
+                  className={`border-gray-200 ${errors.email ? "border-red-500" : ""} ${isEditing ? "bg-gray-100 cursor-not-allowed" : ""}`}
                   value={formData.email}
                   onChange={onInputChange}
-                  disabled={disabled}
+                  disabled={disabled || isEditing}
                 />
                 {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
               </div>
