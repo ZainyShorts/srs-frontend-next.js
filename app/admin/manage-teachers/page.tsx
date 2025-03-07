@@ -93,7 +93,7 @@ export default function TeachersTable() {
        } finally {
         setLoading(false)
        }
-     }, 500),
+     }, 500)
      [],
    )
 
