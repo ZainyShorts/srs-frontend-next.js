@@ -237,10 +237,11 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
     if (!formData.email) {
       newErrors.email = "Email is required"
       isValid = false
-    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      newErrors.email = "Invalid email format"
-      isValid = false
-    }
+    } 
+    // else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+    //   newErrors.email = "Invalid email format"
+    //   isValid = false
+    // }
 
     if (!formData.phone) {
       newErrors.phone = "Phone number is required"
