@@ -66,6 +66,11 @@ const AdminSidebar = ({isSidebarOpen,setIsSidebarOpen}:{isSidebarOpen:boolean,se
       name: "Schedule Course",
       href: "/admin/schedule-course",
       icon: Plus,
+    }, 
+    {
+      name: "Departments",
+      href: "/admin/departments",
+      icon: Plus,
     },
   ]
 
