@@ -65,11 +65,29 @@ export default function CoursesPage() {
     description: "",
   })
 
-  // Fetch courses
-  const fetchCourses = async () => {
+  // Add a new state for search query and search loading
+  const [searchQuery, setSearchQuery] = useState("")
+  const [isSearching, setIsSearching] = useState(false)
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
+
+  // Add useEffect for debouncing search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery)
+    }, 500) // 500ms debounce delay
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Modify the fetchCourses function to handle search
+  const fetchCourses = async (query = "") => {
     try {
       setIsLoading(true)
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course`)
+      const url = query
+        ? `${process.env.NEXT_PUBLIC_SRS_SERVER}/course?name=${encodeURIComponent(query)}`
+        : `${process.env.NEXT_PUBLIC_SRS_SERVER}/course`
+
+      const response = await axios.get(url)
       console.log("res", response)
       setCourses(response.data)
     } catch (error) {
@@ -77,7 +95,30 @@ export default function CoursesPage() {
       toast.error("Failed to load courses")
     } finally {
       setIsLoading(false)
+      setIsSearching(false)
     }
+  }
+
+  // Add useEffect to handle search query changes
+  useEffect(() => {
+    if (debouncedSearchQuery !== searchQuery) {
+      setIsSearching(true)
+    }
+    fetchCourses(debouncedSearchQuery)
+
+    // Update URL with search query
+    const url = new URL(window.location.href)
+    if (debouncedSearchQuery) {
+      url.searchParams.set("name", debouncedSearchQuery)
+    } else {
+      url.searchParams.delete("name")
+    }
+    window.history.pushState({}, "", url)
+  }, [debouncedSearchQuery])
+
+  // Add a function to handle search input changes
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
   }
 
   // Fetch departments
@@ -94,24 +135,30 @@ export default function CoursesPage() {
     }
   }
 
-  // Initial data fetch
+
   useEffect(() => {
-    fetchCourses()
+    const urlParams = new URLSearchParams(window.location.search)
+    const nameParam = urlParams.get("name")
+
+    if (nameParam) {
+      setSearchQuery(nameParam)
+      setDebouncedSearchQuery(nameParam)
+    } else {
+      fetchCourses()
+    }
+
     fetchDepartments()
   }, [])
 
-  // Handle input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target
     setFormData((prev) => ({ ...prev, [id]: value }))
   }
 
-  // Handle select change
   const handleSelectChange = (value: string) => {
     setFormData((prev) => ({ ...prev, departmentId: value }))
   }
 
-  // Reset form
   const resetForm = () => {
     setFormData({
       courseName: "",
@@ -169,8 +216,12 @@ export default function CoursesPage() {
       toast.success("Course added successfully!")
       setIsModalOpen(false)
       resetForm()
-      fetchCourses() // Refresh courses list
-    } catch (error) {
+      fetchCourses()
+    } catch (error: any) {
+      if (error.status === 409) {
+        toast.error(error.response.data.message)
+        return
+      }
       console.error("Error adding course:", error)
       toast.error("Failed to add course")
     } finally {
@@ -196,6 +247,35 @@ export default function CoursesPage() {
         <Button onClick={openModal} className="bg-black text-white hover:bg-black/90">
           <Plus className="mr-2 h-4 w-4" /> Add Course
         </Button>
+      </div>
+      <div className="mb-6 mt-4">
+        <div className="relative flex">
+          <Input
+            type="text"
+            placeholder="Search courses by name..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className="pl-10 border-gray-300 focus:border-black focus:ring-black"
+          />
+          {isSearching ? (
+            <Loader2 className="h-4 w-4 absolute left-3 top-3 animate-spin text-gray-500" />
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 absolute left-3 top-3 text-gray-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          )}
+        </div>
       </div>
 
       {/* Courses List */}

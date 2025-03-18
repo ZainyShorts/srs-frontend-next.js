@@ -31,7 +31,8 @@ export default function DepartmentsPage() {
   const fetchDepartments = async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/department`)
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/department`) 
+      
       setDepartments(response.data)
     } catch (error) {
       console.error("Error fetching departments:", error)
