@@ -11,12 +11,12 @@ import { GuardianForm } from "./guardian-form"
 interface StudentGuardianModalProps {
   isOpen: boolean
   onClose: () => void
-  studentData?: any 
-  handleDone?:any
+  studentData?: any
+  handleDone?: any
 }
 
 interface StudentData {
-  rollNo: string
+  studentId: string
   firstName: string
   lastName: string
   class: string
@@ -32,13 +32,20 @@ interface StudentData {
   guardianName: string
   guardianEmail: string
   guardianPhone: string
-  guardianPhoto: any 
-  guardianRelation: string 
-  guardianProfession : string
+  guardianPhoto: any
+  guardianRelation: string
+  guardianProfession: string
+  transcripts: File[] // Add this line
+  iipFlag: string // Add this line
+  honorRolls: boolean // Add this line
+  athletics: boolean // Add this line
+  clubs: string // Add this line
+  lunch: string // Add this line
+  nationality: string // Add this line
 }
 
 interface FormErrors {
-  rollNo: string
+  studentId: string
   firstName: string
   lastName: string
   class: string
@@ -50,16 +57,20 @@ interface FormErrors {
   expectedGraduation: string
   guardianName: string
   guardianEmail: string
-  guardianPhone: string 
-  guardianRelation: string 
-  guardianProfession : string
+  guardianPhone: string
+  guardianRelation: string
+  guardianProfession: string
+  iipFlag: string // Add this line
+  clubs: string // Add this line
+  lunch: string // Add this line
+  nationality: string // Add this line
 }
 
-export default function StudentGuardianModal({ isOpen, onClose, studentData , handleDone }: StudentGuardianModalProps) {
+export default function StudentGuardianModal({ isOpen, onClose, studentData, handleDone }: StudentGuardianModalProps) {
   const [currentStep, setCurrentStep] = useState<"student" | "guardian">("student")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<StudentData>({
-    rollNo: "",
+    studentId: "",
     firstName: "",
     lastName: "",
     class: "",
@@ -75,13 +86,20 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
     guardianName: "",
     guardianEmail: "",
     guardianPhone: "",
-    guardianPhoto: null, 
-    guardianRelation: "", 
+    guardianPhoto: null,
+    guardianRelation: "",
     guardianProfession: "",
+    transcripts: [], // Add this line
+    iipFlag: "", // Add this line
+    honorRolls: false, // Add this line
+    athletics: false, // Add this line
+    clubs: "", // Add this line
+    lunch: "", // Add this line
+    nationality: "", // Add this line
   })
 
   const [errors, setErrors] = useState<FormErrors>({
-    rollNo: "",
+    studentId: "",
     firstName: "",
     lastName: "",
     class: "",
@@ -93,13 +111,18 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
     expectedGraduation: "",
     guardianName: "",
     guardianEmail: "",
-    guardianPhone: "", 
-    guardianRelation: "", 
-    guardianProfession : "",
+    guardianPhone: "",
+    guardianRelation: "",
+    guardianProfession: "",
+    iipFlag: "", // Add this line
+    clubs: "", // Add this line
+    lunch: "", // Add this line
+    nationality: "", // Add this line
   })
 
   const [studentPhotoPreview, setStudentPhotoPreview] = useState<string | null>(null)
   const [guardianPhotoPreview, setGuardianPhotoPreview] = useState<string | null>(null)
+  const [transcriptPreviews, setTranscriptPreviews] = useState<{ name: string; size: number }[]>([]) // Add this line
 
   useEffect(() => {
     if (currentStep === "student") {
@@ -112,7 +135,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
     } else {
       setErrors((prev) => ({
         ...prev,
-        rollNo: "",
+        studentId: "",
         firstName: "",
         lastName: "",
         class: "",
@@ -129,7 +152,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
   useEffect(() => {
     if (studentData) {
       setFormData({
-        rollNo: studentData.rollNo || "",
+        studentId: studentData.studentId || "",
         firstName: studentData.firstName || "",
         lastName: studentData.lastName || "",
         class: studentData.class || "",
@@ -147,9 +170,16 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
         guardianName: studentData.guardian.guardianName || "",
         guardianEmail: studentData.guardian.guardianEmail || "",
         guardianPhone: studentData.guardian.guardianPhone || "",
-        guardianPhoto: "no", 
-        guardianRelation: studentData.guardian.guardianRelation , 
-        guardianProfession:studentData.guardian.guardianProfession ,
+        guardianPhoto: "no",
+        guardianRelation: studentData.guardian.guardianRelation,
+        guardianProfession: studentData.guardian.guardianProfession,
+        transcripts: [], // Add this line
+        iipFlag: studentData.iipFlag || "", // Add this line
+        honorRolls: studentData.honorRolls || false, // Add this line
+        athletics: studentData.athletics || false, // Add this line
+        clubs: studentData.clubs || "", // Add this line
+        lunch: studentData.lunch || "", // Add this line
+        nationality: studentData.nationality || "", // Add this line
       })
     }
   }, [studentData])
@@ -163,16 +193,16 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
     }
   }
 
-  const handleSelectChange = (name: string, value: string) => {
+  const handleSelectChange = (name: string, value: string | boolean) => {
     setFormData({ ...formData, [name]: value })
 
     if (errors[name as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [name]: "" }))
     }
-  } 
-  useEffect(()=>{ 
-   console.log('student',studentData)
-  },[studentData])
+  }
+  useEffect(() => {
+    console.log("student", studentData)
+  }, [studentData])
 
   const handleStudentPhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -200,12 +230,47 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
     }
   }
 
+  const handleTranscriptChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files)
+      setFormData((prev) => ({
+        ...prev,
+        transcripts: [...prev.transcripts, ...newFiles],
+      }))
+
+      // Update previews
+      const newPreviews = newFiles.map((file) => ({
+        name: file.name,
+        size: file.size,
+      }))
+
+      setTranscriptPreviews((prev) => [...prev, ...newPreviews])
+    }
+  }
+
+  const removeTranscript = (index: number) => {
+    setFormData((prev) => {
+      const updatedTranscripts = [...prev.transcripts]
+      updatedTranscripts.splice(index, 1)
+      return {
+        ...prev,
+        transcripts: updatedTranscripts,
+      }
+    })
+
+    setTranscriptPreviews((prev) => {
+      const updatedPreviews = [...prev]
+      updatedPreviews.splice(index, 1)
+      return updatedPreviews
+    })
+  }
+
   const validateStudentForm = () => {
     const newErrors = { ...errors }
     let isValid = true
 
-    if (!formData.rollNo) {
-      newErrors.rollNo = "Roll number is required"
+    if (!formData.studentId) {
+      newErrors.studentId = "Roll number is required"
       isValid = false
     }
 
@@ -237,7 +302,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
     if (!formData.email) {
       newErrors.email = "Email is required"
       isValid = false
-    } 
+    }
     // else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
     //   newErrors.email = "Invalid email format"
     //   isValid = false
@@ -330,17 +395,17 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
 
   const handleSubmit = async () => {
     if (!validateGuardianForm()) {
-      return;
+      return
     }
-  
-    setIsSubmitting(true);
-  
+
+    setIsSubmitting(true)
+
     try {
-      let apiData;
-  
+      let apiData
+
       if (studentData) {
         apiData = {
-          rollNo: formData.rollNo || "",
+          studentId: formData.studentId || "",
           firstName: formData.firstName || "",
           lastName: formData.lastName || "",
           class: formData.class || "",
@@ -356,32 +421,35 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
           guardianName: formData.guardianName || "",
           guardianEmail: formData.guardianEmail || "",
           guardianPhone: formData.guardianPhone || "",
-          guardianPhoto: formData.guardianPhoto ? "no" : "no", 
+          guardianPhoto: formData.guardianPhoto ? "no" : "no",
           guardianRelation: formData.guardianRelation || "",
           guardianProfession: formData.guardianProfession || "",
-        };
-        console.log('api data', apiData)
-        const response = await axios.put(
-          `${process.env.NEXT_PUBLIC_SRS_SERVER}/student/${studentData._id}`,
-          apiData
-        ); 
+          iipFlag: formData.iipFlag || "",
+          honorRolls: Boolean(formData.honorRolls),
+          athletics: Boolean(formData.athletics),
+          clubs: formData.clubs || "",
+          lunch: formData.lunch || "",
+          nationality: formData.nationality || "",
+          transcripts: "no",
+        }
+        console.log("api data", apiData)
+        const response = await axios.put(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student/${studentData._id}`, apiData)
         if (response.data.status == 409) {
-                toast.error(response.data.msg);
-              } 
-              else {
-        toast.success("Student updated successfully", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-        await handleDone() 
-      }
+          toast.error(response.data.msg)
+        } else {
+          toast.success("Student updated successfully", {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          })
+          await handleDone()
+        }
       } else {
         apiData = {
-          rollNo: formData.rollNo || "",
+          studentId: formData.studentId || "",
           firstName: formData.firstName || "",
           lastName: formData.lastName || "",
           class: formData.class || "",
@@ -397,36 +465,38 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
           guardianName: formData.guardianName || "",
           guardianEmail: formData.guardianEmail || "",
           guardianPhone: formData.guardianPhone || "",
-          guardianPhoto: formData.guardianPhoto ? "no" : "no", 
+          guardianPhoto: formData.guardianPhoto ? "no" : "no",
           guardianRelation: formData.guardianRelation || "",
           guardianProfession: formData.guardianProfession || "",
-        };
-  
-        console.log("AddingData", apiData);
-        const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_SRS_SERVER}/student/add`,
-          apiData
-        );  
-        console.log('response',response) 
-        if (response.data.status == 409) {
-          toast.error(response.data.msg);
-        }  
-        else {
+          iipFlag: formData.iipFlag || "",
+          honorRolls: Boolean(formData.honorRolls),
+          athletics: Boolean(formData.athletics),
+          clubs: formData.clubs || "",
+          lunch: formData.lunch || "",
+          nationality: formData.nationality || "",
+          transcripts: "no",
+        }
 
-        toast.success("Student added successfully", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-        await handleDone()
-      }  
-      
-      resetForm();
-      onClose();
-    }
+        console.log("AddingData", apiData)
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student/add`, apiData)
+        console.log("response", response)
+        if (response.data.status == 409) {
+          toast.error(response.data.msg)
+        } else {
+          toast.success("Student added successfully", {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          })
+          await handleDone()
+        }
+
+        resetForm()
+        onClose()
+      }
     } catch (error) {
       if (error.response && error.response.status === 409) {
         toast.error("This Email is Already Registered", {
@@ -436,18 +506,17 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
-        });
+        })
       }
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
-  
+  }
 
   const resetForm = () => {
     setCurrentStep("student")
     setFormData({
-      rollNo: "",
+      studentId: "",
       firstName: "",
       lastName: "",
       class: "",
@@ -463,14 +532,22 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
       guardianName: "",
       guardianEmail: "",
       guardianPhone: "",
-      guardianPhoto: null, 
-      guardianRelation: "", 
+      guardianPhoto: null,
+      guardianRelation: "",
       guardianProfession: "",
+      transcripts: [], // Add this line
+      iipFlag: "", // Add this line
+      honorRolls: false, // Add this line
+      athletics: false, // Add this line
+      clubs: "", // Add this line
+      lunch: "", // Add this line
+      nationality: "", // Add this line
     })
     setStudentPhotoPreview(null)
     setGuardianPhotoPreview(null)
+    setTranscriptPreviews([]) // Add this line
     setErrors({
-      rollNo: "",
+      studentId: "",
       firstName: "",
       lastName: "",
       class: "",
@@ -482,9 +559,13 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
       expectedGraduation: "",
       guardianName: "",
       guardianEmail: "",
-      guardianPhone: "", 
-      guardianRelation: "", 
+      guardianPhone: "",
+      guardianRelation: "",
       guardianProfession: "",
+      iipFlag: "", // Add this line
+      clubs: "", // Add this line
+      lunch: "", // Add this line
+      nationality: "", // Add this line
     })
   }
 
@@ -496,8 +577,6 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
 
   return (
     <>
-     
-
       <Dialog open={isOpen} onOpenChange={handleCloseRequest}>
         <DialogContent className="max-w-[95vw] sm:max-w-[80vw] md:max-w-[70vw] lg:max-w-5xl p-0">
           <div className="custom-scrollbar max-h-[80vh] overflow-y-auto">
@@ -526,8 +605,11 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData , ha
                     onPhotoChange={handleStudentPhotoChange}
                     onContinue={handleContinueToGuardian}
                     onCancel={onClose}
-                    disabled={isSubmitting} 
+                    disabled={isSubmitting}
                     isEditing={!!studentData}
+                    transcriptPreviews={transcriptPreviews} // Add this line
+                    onTranscriptChange={handleTranscriptChange} // Add this line
+                    onRemoveTranscript={removeTranscript} // Add this line
                   />
                 </div>
                 <div className="w-1/2 flex-shrink-0">

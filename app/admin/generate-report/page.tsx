@@ -32,7 +32,7 @@ interface Guardian {
 
 interface Student {
   _id: string
-  rollNo: string
+  studentId: string
   firstName: string
   lastName: string
   class: string
@@ -195,7 +195,7 @@ export default function ReportsPage() {
       const data: StudentApiResponse = await response.json()
 
       return data.data.map((student) => ({
-        "Roll No": student.rollNo,
+        "Student ID": student.studentId,
         Name: `${student.firstName} ${student.lastName}`,
         Class: student.class,
         Section: student.section,
@@ -242,7 +242,7 @@ export default function ReportsPage() {
     return (
       student.firstName.toLowerCase().includes(searchLower) ||
       student.lastName.toLowerCase().includes(searchLower) ||
-      student.rollNo.toLowerCase().includes(searchLower) ||
+      student.studentId.toLowerCase().includes(searchLower) ||
       student.email.toLowerCase().includes(searchLower)
     )
   })
@@ -455,7 +455,7 @@ export default function ReportsPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="w-[100px] whitespace-nowrap">Roll No</TableHead>
+                          <TableHead className="w-[100px] whitespace-nowrap">Student ID</TableHead>
                           <TableHead className="w-[150px] whitespace-nowrap">Name</TableHead>
                           <TableHead className="w-[80px] whitespace-nowrap">Class</TableHead>
                           <TableHead className="w-[80px] whitespace-nowrap">Section</TableHead>
@@ -473,7 +473,7 @@ export default function ReportsPage() {
                       <TableBody>
                         {filteredStudents.map((student) => (
                           <TableRow key={student._id}>
-                            <TableCell className="font-medium whitespace-nowrap">{student.rollNo}</TableCell>
+                            <TableCell className="font-medium whitespace-nowrap">{student.studentId}</TableCell>
                             <TableCell className="whitespace-nowrap">{`${student.firstName} ${student.lastName}`}</TableCell>
                             <TableCell className="whitespace-nowrap">{student.class}</TableCell>
                             <TableCell className="whitespace-nowrap">{student.section}</TableCell>

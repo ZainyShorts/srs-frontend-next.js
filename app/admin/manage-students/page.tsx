@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import StudentGuardianModal from "./Add-students/AddStudents"
 import axios from "axios"
+import { boolean } from "zod"
 
 export default function StudentsTable() {
   const [students, setStudents] = useState([])
@@ -43,11 +44,11 @@ export default function StudentsTable() {
       setIsLoading(false)
     }
   }, [])
-  const fetchStudentDataByRollNo = useCallback(
-    debounce(async (rollNo: any) => {
+  const fetchStudentDataBystudentId = useCallback(
+    debounce(async (studentId: any) => {
       try {
         setIsLoading(true)
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student?rollNo=${rollNo}`)
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student?studentId=${studentId}`)
         console.log("response", response)
         setStudents(response.data.data || [])
         setTotalPages(response.data.totalPages || 0)
@@ -55,7 +56,7 @@ export default function StudentsTable() {
         setCurrentPage(response.data.currentPage || 1)
         setLimit(response.data.limit || 10)
       } catch (error) {
-        console.error("Error fetching student data by roll number:", error)
+        console.error("Error fetching student data by Student Id:", error)
       } finally {
         setIsLoading(false)
       }
@@ -144,8 +145,15 @@ export default function StudentsTable() {
 
     if (typeof student[key] === "object" && student[key] !== null) {
       return "Object"
+    } 
+    if (typeof student[key] === "boolean")  { 
+       if ( student[key] === true) { 
+        return 'Yes'
+       } 
+       else if ( student[key] === false) { 
+        return 'No'
+       }
     }
-
     return String(student[key] || "")
   }
   const handleDelete = async (id: any) => {
@@ -192,7 +200,7 @@ export default function StudentsTable() {
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value)
-            fetchStudentDataByRollNo(e.target.value)
+            fetchStudentDataBystudentId(e.target.value)
           }}
           className="max-w-sm"
         />
