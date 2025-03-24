@@ -38,6 +38,9 @@ interface Course {
   Prerequisites: string
   description: string
   createdAt: string
+  courseCredit: number
+  active: boolean
+  special: boolean
 }
 
 export default function CoursesPage() {
@@ -63,6 +66,9 @@ export default function CoursesPage() {
     departmentId: "",
     Prerequisites: "",
     description: "",
+    courseCredit: "",
+    active: false,
+    special: false,
   })
 
   // Add a new state for search query and search loading
@@ -135,7 +141,6 @@ export default function CoursesPage() {
     }
   }
 
-
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const nameParam = urlParams.get("name")
@@ -166,6 +171,9 @@ export default function CoursesPage() {
       departmentId: "",
       Prerequisites: "",
       description: "",
+      courseCredit: "",
+      active: false,
+      special: false,
     })
   }
 
@@ -210,9 +218,20 @@ export default function CoursesPage() {
       return
     }
 
+    // Ensure at least one of active or special is true
+    if (!formData.active && !formData.special) {
+      toast.error("Either Active or Special status must be selected")
+      return
+    }
+
     try {
       setIsSubmitting(true)
-      await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course/add`, formData)
+      // Convert courseCredit to number for API
+      const dataToSubmit = {
+        ...formData,
+        courseCredit: formData.courseCredit ? Number.parseInt(formData.courseCredit) : undefined,
+      }
+      await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course/add`, dataToSubmit)
       toast.success("Course added successfully!")
       setIsModalOpen(false)
       resetForm()
@@ -233,6 +252,30 @@ export default function CoursesPage() {
   const getDepartmentName = (departmentId: string) => {
     const department = departments.find((dept) => dept._id === departmentId)
     return department ? department.departmentName : "Unknown Department"
+  }
+
+  const handleSwitchChange = (field: "active" | "special") => {
+    setFormData((prev) => {
+      if (field === "active") {
+        // If turning active off and special is already off, make special true
+        if (prev.active && !prev.special) {
+          return { ...prev, active: false, special: true }
+        }
+        // Otherwise toggle active normally
+        return { ...prev, active: !prev.active }
+      } else {
+        // If turning special off and active is already off, make active true
+        if (prev.special && !prev.active) {
+          return { ...prev, special: false, active: true }
+        }
+        // Otherwise toggle special normally
+        return { ...prev, special: !prev.special }
+      }
+    })
+  }
+
+  const handleCreditChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, courseCredit: value }))
   }
 
   return (
@@ -323,6 +366,21 @@ export default function CoursesPage() {
                       <span className="font-medium">Prerequisites:</span> {course.Prerequisites}
                     </div>
                   )}
+                  <div className="text-sm">
+                    <span className="font-medium">Credits:</span> {course.courseCredit || "N/A"}
+                  </div>
+                  <div className="flex space-x-2 mt-1">
+                    {course.active && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Active
+                      </span>
+                    )}
+                    {course.special && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        Special
+                      </span>
+                    )}
+                  </div>
                   <div className="text-sm text-gray-600 line-clamp-2 mt-1">{course.description}</div>
                   <div className="text-xs text-gray-500 mt-2">
                     Added on {new Date(course.createdAt).toLocaleDateString()}
@@ -336,7 +394,7 @@ export default function CoursesPage() {
 
       {/* Add Course Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Course</DialogTitle>
             <DialogDescription>
@@ -408,6 +466,64 @@ export default function CoursesPage() {
                   onChange={handleChange}
                   className="border-gray-300 focus:border-black focus:ring-black"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="courseCredit" className="font-medium">
+                  Course Credit
+                </Label>
+                <Input
+                  id="courseCredit"
+                  type="number"
+                  placeholder="3"
+                  value={formData.courseCredit}
+                  onChange={(e) => handleCreditChange(e.target.value)}
+                  className="border-gray-300 focus:border-black focus:ring-black"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="active" className="font-medium">
+                      Active Course
+                    </Label>
+                    <div
+                      className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 
+        bg-input data-[state=checked]:bg-black"
+                      data-state={formData.active ? "checked" : "unchecked"}
+                      role="switch"
+                      aria-checked={formData.active}
+                      onClick={() => handleSwitchChange("active")}
+                    >
+                      <span
+                        className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform ${formData.active ? "translate-x-5" : "translate-x-0"}`}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500">Enable if this course is currently active</p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="special" className="font-medium">
+                      Special Course
+                    </Label>
+                    <div
+                      className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 
+        bg-input data-[state=checked]:bg-black"
+                      data-state={formData.special ? "checked" : "unchecked"}
+                      role="switch"
+                      aria-checked={formData.special}
+                      onClick={() => handleSwitchChange("special")}
+                    >
+                      <span
+                        className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform ${formData.special ? "translate-x-5" : "translate-x-0"}`}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500">Enable if this is a special course</p>
+                </div>
               </div>
 
               <div className="space-y-2">

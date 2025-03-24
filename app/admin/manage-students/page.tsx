@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { ChevronLeft, ChevronRight, Edit, Trash2, Plus, Copy, Check, Loader2, FileText } from "lucide-react"
+import { ChevronLeft, ChevronRight, Edit, Trash2, Plus, Copy, Check, Loader2, FileText, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { debounce } from "lodash"
@@ -12,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import StudentGuardianModal from "./Add-students/AddStudents"
 import axios from "axios"
-import { boolean } from "zod"
 
 export default function StudentsTable() {
   const [students, setStudents] = useState([])
@@ -92,7 +91,24 @@ export default function StudentsTable() {
     setTimeout(() => setCopiedId(null), 2000)
   }
 
-  const renderCellContent = (student : any, key : any) => {
+  const renderCellContent = (student: any, key: any) => {
+    if (key === "profilePhoto") {
+      if (student[key] && student[key].startsWith("https")) {
+        return (
+          <div className="flex items-center justify-center">
+            <img src={student[key] || "/placeholder.svg"} alt="Profile" className="h-8 w-8 rounded-full object-cover" />
+          </div>
+        )
+      } else {
+        return (
+          <div className="flex items-center justify-center">
+            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+              <User className="h-4 w-4 text-gray-600" />
+            </div>
+          </div>
+        )
+      }
+    }
     if (key === "createdAt" || key === "updatedAt") {
       return formatDate(student[key])
     }
@@ -125,16 +141,16 @@ export default function StudentsTable() {
     if (key.startsWith("Guardian")) {
       const guardianKey = key.split(" ")[1].toLowerCase()
 
-          const actualKey =
+      const actualKey =
         guardianKey === "email"
           ? "guardianEmail"
           : guardianKey === "phone"
-            ? "guardianPhone" 
-           :  guardianKey === "name" 
-             ? "guardianName"
-            : guardianKey === "password"
-              ? "password"
-              : `guardian${guardianKey.charAt(0).toUpperCase() + guardianKey.slice(1)}`
+            ? "guardianPhone"
+            : guardianKey === "name"
+              ? "guardianName"
+              : guardianKey === "password"
+                ? "password"
+                : `guardian${guardianKey.charAt(0).toUpperCase() + guardianKey.slice(1)}`
 
       return student.guardian && student.guardian[actualKey]
         ? actualKey === "password"
@@ -145,14 +161,13 @@ export default function StudentsTable() {
 
     if (typeof student[key] === "object" && student[key] !== null) {
       return "Object"
-    } 
-    if (typeof student[key] === "boolean")  { 
-       if ( student[key] === true) { 
-        return 'Yes'
-       } 
-       else if ( student[key] === false) { 
-        return 'No'
-       }
+    }
+    if (typeof student[key] === "boolean") {
+      if (student[key] === true) {
+        return "Yes"
+      } else if (student[key] === false) {
+        return "No"
+      }
     }
     return String(student[key] || "")
   }
@@ -190,7 +205,12 @@ export default function StudentsTable() {
             <FileText className="mr-2 h-4 w-4" /> Import Students
           </Button>
 
-          <ExcelUploadModal open={open} onClose={() => setOpen(false)} onOpenChange={setOpen} refetch={fetchStudentData} />
+          <ExcelUploadModal
+            open={open}
+            onClose={() => setOpen(false)}
+            onOpenChange={setOpen}
+            refetch={fetchStudentData}
+          />
         </div>
       </div>
 

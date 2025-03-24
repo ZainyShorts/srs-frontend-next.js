@@ -190,7 +190,7 @@ export default function TeachersTable() {
                 {currentTeachers.length > 0 ? (
                   currentTeachers.map((teacher, index) => (
                     <TableRow key={teacher._id}>
-                      <TableCell>{(currentPage - 1) * 10 + index + 1}</TableCell>
+                      <TableCell>{teacher._id}</TableCell>
                       <TableCell>{teacher.firstName}</TableCell>
                       <TableCell>{teacher.lastName}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{teacher.email}</TableCell>
