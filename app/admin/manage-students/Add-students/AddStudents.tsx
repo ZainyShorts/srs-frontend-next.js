@@ -6,7 +6,9 @@ import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { StudentForm } from "./student-form"
-import { GuardianForm } from "./guardian-form"
+import { GuardianForm } from "./guardian-form"  
+import { addActivity } from "@/lib/actitivityFunctions"
+import { activities } from "@/lib/activities"
 
 interface StudentGuardianModalProps {
   isOpen: boolean
@@ -445,7 +447,18 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
             pauseOnHover: true,
             draggable: true,
           })
-          await handleDone()
+          await handleDone()   
+      const message = activities.admin.updateStudent.description.replace('{studentName}', apiData.firstName);
+          
+          const activity = { 
+            title : activities.admin.updateStudent.action, 
+            subtitle : message, 
+            performBy : "Admin"
+           }; 
+          const act =  await addActivity(activity);  
+          console.log('activity' , act);
+           
+        
         }
       } else {
         apiData = {
@@ -491,7 +504,16 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
             pauseOnHover: true,
             draggable: true,
           })
-          await handleDone()
+          await handleDone()   
+          const message = activities.admin.updateStudent.description.replace('{studentName}', apiData.firstName);
+          const activity = { 
+            title : activities.admin.addStudent.action, 
+            subtitle : message, 
+            performBy : "Admin"
+           }; 
+          const act =  await addActivity(activity);  
+          console.log('activity' , act);
+           
         }
 
         resetForm()

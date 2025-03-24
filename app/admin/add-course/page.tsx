@@ -12,7 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
+import { Textarea } from "@/components/ui/textarea" 
+import { activities } from "@/lib/activities" 
+import { addActivity } from "@/lib/actitivityFunctions"
 import {
   Dialog,
   DialogContent,
@@ -189,14 +191,20 @@ export default function CoursesPage() {
     setIsDeleteModalOpen(true)
   }
 
-  // Handle delete course
   const handleDeleteCourse = async () => {
     if (!courseToDelete) return
 
     try {
       setIsDeleting(true)
       await axios.delete(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course/${courseToDelete._id}`)
-      toast.success("Course deleted successfully!")
+      toast.success("Course deleted successfully!") 
+      const message = activities.admin.deleteCourse.description.replace('{courseName}', courseToDelete.courseName);
+           const activity = { 
+                          title : activities.admin.deleteCourse.action, 
+                          subtitle : message, 
+                          performBy : "Admin"
+                         }; 
+                        const act =  await addActivity(activity);  
       setIsDeleteModalOpen(false)
       setCourseToDelete(null)
       fetchCourses() // Refresh courses list
@@ -232,7 +240,16 @@ export default function CoursesPage() {
         courseCredit: formData.courseCredit ? Number.parseInt(formData.courseCredit) : undefined,
       }
       await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course/add`, dataToSubmit)
-      toast.success("Course added successfully!")
+      toast.success("Course added successfully!")   
+      const message = activities.admin.addCourse.description.replace('{courseName}', formData.courseName);
+
+           const activity = { 
+                          title : activities.admin.addCourse.action, 
+                          subtitle : message, 
+                          performBy : "Admin"
+                         }; 
+                        const act =  await addActivity(activity);  
+
       setIsModalOpen(false)
       resetForm()
       fetchCourses()
@@ -257,22 +274,19 @@ export default function CoursesPage() {
   const handleSwitchChange = (field: "active" | "special") => {
     setFormData((prev) => {
       if (field === "active") {
-        // If turning active off and special is already off, make special true
-        if (prev.active && !prev.special) {
-          return { ...prev, active: false, special: true }
+        if (!prev.active) {
+          return { ...prev, active: true, special: false };
         }
-        // Otherwise toggle active normally
-        return { ...prev, active: !prev.active }
-      } else {
-        // If turning special off and active is already off, make active true
-        if (prev.special && !prev.active) {
-          return { ...prev, special: false, active: true }
+        return { ...prev, active: false };
+      } 
+      else {
+        if (!prev.special) {
+          return { ...prev, special: true, active: false };
         }
-        // Otherwise toggle special normally
-        return { ...prev, special: !prev.special }
+        return { ...prev, special: false };
       }
-    })
-  }
+    });
+  };
 
   const handleCreditChange = (value: string) => {
     setFormData((prev) => ({ ...prev, courseCredit: value }))
@@ -491,8 +505,9 @@ export default function CoursesPage() {
                     <div
                       className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 
         bg-input data-[state=checked]:bg-black"
-                      data-state={formData.active ? "checked" : "unchecked"}
-                      role="switch"
+        data-state={
+          formData.active && !formData.special ? "checked" : "unchecked"
+               }                       role="switch"
                       aria-checked={formData.active}
                       onClick={() => handleSwitchChange("active")}
                     >
@@ -512,8 +527,10 @@ export default function CoursesPage() {
                     <div
                       className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 
         bg-input data-[state=checked]:bg-black"
-                      data-state={formData.special ? "checked" : "unchecked"}
-                      role="switch"
+            data-state={
+          formData.special && !formData.active ? "checked" : "unchecked"
+               }              
+                       role="switch"
                       aria-checked={formData.special}
                       onClick={() => handleSwitchChange("special")}
                     >

@@ -6,7 +6,8 @@ import { useState, useEffect } from "react"
 import { CheckIcon, Loader2, Plus, Trash2, Calendar, Clock, AlertCircle } from "lucide-react"
 import axios from "axios"
 import { toast } from "react-toastify"
-
+import { activities } from "@/lib/activities" 
+import { addActivity } from "@/lib/actitivityFunctions"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -377,7 +378,16 @@ export default function ScheduleCoursePage() {
     try {
       setIsSubmitting(true)
       await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/schedule/add`, formData)
-      toast.success("Course scheduled successfully!")
+      toast.success("Course scheduled successfully!")   
+      console.log('day of week', formData.dayOfWeek)
+       const message = activities.admin.scheduleClass.description.replace('{className}', formData.className)       ;
+      
+                 const activity = { 
+                                title : activities.admin.scheduleClass.action, 
+                                subtitle : message, 
+                                performBy : "Admin"
+                               }; 
+                              const act =  await addActivity(activity);  
       setIsModalOpen(false)
 
       // Reset form
@@ -415,8 +425,16 @@ export default function ScheduleCoursePage() {
     try {
       setIsDeleting(true)
       await axios.delete(`${process.env.NEXT_PUBLIC_SRS_SERVER}/schedule/${scheduleToDelete._id}`)
-      toast.success("Schedule deleted successfully!")
-      setIsDeleteModalOpen(false)
+      toast.success("Schedule deleted successfully!")   
+      const message = activities.admin.removeScheduleClass.description.replace('{className}', formData.className);
+      const activity = { 
+                     title : activities.admin.removeScheduleClass.action, 
+                     subtitle : message, 
+                     performBy : "Admin"
+                    }; 
+                   const act =  await addActivity(activity);  
+      setIsDeleteModalOpen(false) 
+
       setScheduleToDelete(null)
       fetchSchedules() // Refresh schedules list
     } catch (error) {

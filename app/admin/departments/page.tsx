@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Loader2, Plus, Trash } from "lucide-react" // Import Trash icon
-import { toast } from "react-toastify"
+import { toast } from "react-toastify" 
+import { activities } from "@/lib/activities" 
+import { addActivity } from "@/lib/actitivityFunctions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface Department {
@@ -60,7 +62,15 @@ export default function DepartmentsPage() {
         departmentName: newDepartmentName,
       })
 
-      toast.success("Department added successfully")
+      toast.success("Department added successfully") 
+       const message = activities.admin.addDepartment.description.replace('{departmentName}', newDepartmentName );
+          
+                     const activity = { 
+                                    title : activities.admin.addDepartment.action, 
+                                    subtitle : message, 
+                                    performBy : "Admin"
+                                   }; 
+                                  const act =  await addActivity(activity);  
       setNewDepartmentName("")
       setIsModalOpen(false)
       fetchDepartments() // Refresh the list
@@ -78,13 +88,21 @@ export default function DepartmentsPage() {
     try {
       await axios.delete(`${process.env.NEXT_PUBLIC_SRS_SERVER}/department/${departmentToDelete._id}`)
       toast.success("Department deleted successfully")
-      fetchDepartments()
+      fetchDepartments() 
+       const message = activities.admin.deleteDepartment.description.replace('{departmentName}', newDepartmentName );
+          
+                                const activity = { 
+                                    title : activities.admin.deleteDepartment.action, 
+                                    subtitle : message, 
+                                    performBy : "Admin"
+                                   }; 
+                                  const act =  await addActivity(activity);  
     } catch (error) {
       console.error("Error deleting department:", error)
       toast.error("Failed to delete department")
     } finally {
-      setIsDeleteModalOpen(false) // Close the delete confirmation modal
-      setDepartmentToDelete(null) // Reset the department to delete
+      setIsDeleteModalOpen(false)
+      setDepartmentToDelete(null) 
     }
   }
 

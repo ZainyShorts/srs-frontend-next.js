@@ -4,7 +4,9 @@ import { useEffect, useState, useCallback } from "react"
 import { ChevronLeft, ChevronRight, Edit, Trash2, Plus, Copy, Check, Loader2, FileText, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { debounce } from "lodash"
+import { debounce } from "lodash" 
+import { activities } from "@/lib/activities" 
+import { addActivity } from "@/lib/actitivityFunctions"
 import { ExcelUploadModal } from "./Add-students/excellUpload"
 import { toast } from "react-toastify"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -171,7 +173,7 @@ export default function StudentsTable() {
     }
     return String(student[key] || "")
   }
-  const handleDelete = async (id: any) => {
+  const handleDelete = async (id: any , name : any) => {
     setIsLoading(true)
 
     const response = await axios.delete(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student/${id}`)
@@ -183,8 +185,17 @@ export default function StudentsTable() {
       closeOnClick: true,
       pauseOnHover: true,
       draggable: true,
-    })
-    await fetchStudentData()
+    }) 
+
+    await fetchStudentData() 
+    const message = activities.admin.deleteStudent.description.replace('{courseName}', name );
+    
+               const activity = { 
+                              title : activities.admin.deleteStudent.action, 
+                              subtitle : message, 
+                              performBy : "Admin"
+                             }; 
+                            const act =  await addActivity(activity);  
     setIsLoading(false)
   }
   return (
@@ -282,7 +293,7 @@ export default function StudentsTable() {
                     </Button>
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
-                    <Button onClick={() => handleDelete(student._id)} variant="ghost" size="sm">
+                    <Button onClick={() => handleDelete(student._id , student.firstName)} variant="ghost" size="sm">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>

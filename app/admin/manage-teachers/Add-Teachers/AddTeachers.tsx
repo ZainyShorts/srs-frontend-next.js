@@ -14,7 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { toast } from "react-toastify"
+import { toast } from "react-toastify"  
+import { activities } from "@/lib/activities"
+import { addActivity } from "@/lib/actitivityFunctions"
 
 interface Teacher {
   _id: string
@@ -97,8 +99,15 @@ export default function AddTeacherModal({ isOpen, onClose, teacherData, onSucces
          if (response.data.status == 409) {
                   toast.error(response.data.msg);
                 }  
-                else {
-        toast.success("Teacher updated successfully!") 
+                else { 
+
+        toast.success("Teacher updated successfully!")  
+        const message = activities.admin.updateTeacher.description.replace('{teacherName}', formData.firstName);
+        const activity = { 
+                  title : activities.admin.updateTeacher.action, 
+                  subtitle : message, 
+                  performBy : "Admin"
+                 }; 
                 }
       } else {
         const response = await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers/add`, formData)
@@ -108,7 +117,14 @@ export default function AddTeacherModal({ isOpen, onClose, teacherData, onSucces
                 }   
                 else {
 
-        toast.success("Teacher added successfully!")
+        toast.success("Teacher added successfully!")  
+        const message = activities.admin.addTeacher.description.replace('{teacherName}', formData.firstName);
+          const activity = { 
+                    title : activities.admin.addTeacher.action, 
+                    subtitle : message, 
+                    performBy : "Admin"
+                   }; 
+                  const act =  await addActivity(activity);  
       } 
     }
 
