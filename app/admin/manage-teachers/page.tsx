@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react"
 import axios from "axios"
-import { ChevronLeft, ChevronRight, Edit, Trash2, Plus, Loader2 , FileText } from 'lucide-react'
-import { Button } from "@/components/ui/button" 
+import { ChevronLeft, ChevronRight, Edit, Trash2, Plus, Loader2, FileText, User } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { debounce } from "lodash"
 import { useCallback } from "react"
-import { Input } from "@/components/ui/input" 
+import { Input } from "@/components/ui/input"
 import { TeachersExcelUploadModal } from "./Add-Teachers/excellUpload"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -23,35 +23,58 @@ interface Teacher {
   gender: string
   address: string
   qualification: string
+  profilePhoto?: string
 }
 
 export default function TeachersTable() {
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [loading, setLoading] = useState(true)
-  const [deleteLoading, setDeleteLoading] = useState<string | null>(null) 
-    const [open, setOpen] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
+  const [open, setOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState("")
   const [departmentFilter, setDepartmentFilter] = useState("all")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null)
+  const [departments, setDepartments] = useState<{ _id: string; name: string }[]>([])
+  const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(false)
 
-  const fetchTeachers = async () => {
+  const fetchTeachers = useCallback(async () => {
     try {
-      setLoading(true)
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers`)
-      setTeachers(response.data.data)
+      setLoading(true) 
+      console.log(departmentFilter)
+      const url =
+        departmentFilter === "all"
+          ? `${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers` 
+          : `${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers?department=${departmentFilter}`
+      const response = await axios.get(url)
+      setTeachers(response.data.data.reverse())
+      console.log(response)
     } catch (error) {
       console.error("Error fetching teachers:", error)
       toast.error("Failed to load teachers")
     } finally {
       setLoading(false)
     }
+  }, [departmentFilter])
+
+  const fetchDepartments = async () => {
+    try {
+      setIsDepartmentsLoading(true)
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/department`)
+      setDepartments(response.data)
+    } catch (error) {
+      console.error("Error fetching departments:", error)
+      toast.error("Failed to load departments")
+    } finally {
+      setIsDepartmentsLoading(false)
+    }
   }
 
   useEffect(() => {
     fetchTeachers()
-  }, [])
+    fetchDepartments()
+  }, [fetchTeachers])
 
   const handleDeleteTeacher = async (id: string) => {
     try {
@@ -77,72 +100,55 @@ export default function TeachersTable() {
     setSelectedTeacher(null)
   }
 
-  // const fetchTeacherByEmail = useCallback(
-  //    debounce(async (email: any) => {
-  //      try {
-  //       setLoading(true)
-  //        const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers?email=${email}`)
-  //        console.log("response", response)
-  //        setTeachers(response.data.data || [])
-  //       //  setTotalPages(response.data.totalPages || 0)
-  //       //  setTotalRecords(response.data.totalRecordsCount || 0)
-  //        setCurrentPage(response.data.currentPage || 1)
-  //       //  setLimit(response.data.limit || 10)
-  //      } catch (error) {
-  //        console.error("Error fetching student data by roll number:", error)
-  //      } finally {
-  //       setLoading(false)
-  //      }
-  //    }, 500)
-  //    [],
-  //  )
-
   const fetchTeacherByEmail = useCallback(
     debounce(async (email: any) => {
       try {
-        setLoading(true);
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers?email=${email}`
-        );
-        console.log("response", response);
-        setTeachers(response.data.data || []);
-        setCurrentPage(response.data.currentPage || 1);
+        setLoading(true)
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers?email=${email}`)
+        console.log("response", response)
+        setTeachers(response.data.data || [])
+        setCurrentPage(response.data.currentPage || 1)
       } catch (error) {
-        console.error("Error fetching teacher data by email:", error);
+        console.error("Error fetching teacher data by email:", error)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     }, 500),
-    [] // Corrected dependency array placement
-  );
-  
+    [],
+  )
 
   const pageCount = Math.ceil(teachers.length / 10)
   const currentTeachers = teachers.slice((currentPage - 1) * 10, currentPage * 10)
 
-  const departments = Array.from(new Set(teachers.map(teacher => teacher.department))).filter(Boolean)
+  const departmentsArray = Array.from(new Set(teachers.map((teacher) => teacher.department))).filter(Boolean)
+
+  const isValidPhotoUrl = (url?: string) => {
+    return url && url.startsWith("https")
+  }
 
   return (
     <div className="container mx-auto py-10 p-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Teachers</h1> 
+        <h1 className="text-3xl font-bold">Teachers</h1>
         <div className="flex gap-2">
-
-        <Button onClick={() => setIsModalOpen(true)} className="bg-black text-white hover:bg-gray-800">
-          <Plus className="mr-2 h-4 w-4" /> Add Teacher
-        </Button> 
-                  <Button onClick={() => setOpen(true)} className="bg-black text-white hover:bg-gray-800">
-                    <FileText className="mr-2 h-4 w-4" /> Import Teachers
-                  </Button>  
-    <TeachersExcelUploadModal open={open} onClose={() => setOpen(false)} onOpenChange={setOpen} refetch={fetchTeachers} />
-                  
-                  </div>
-
+          <Button onClick={() => setIsModalOpen(true)} className="bg-black text-white hover:bg-gray-800">
+            <Plus className="mr-2 h-4 w-4" /> Add Teacher
+          </Button>
+          <Button onClick={() => setOpen(true)} className="bg-black text-white hover:bg-gray-800">
+            <FileText className="mr-2 h-4 w-4" /> Import Teachers
+          </Button>
+          <TeachersExcelUploadModal
+            open={open}
+            onClose={() => setOpen(false)}
+            onOpenChange={setOpen}
+            refetch={fetchTeachers}
+          />
+        </div>
       </div>
 
       <div className="flex justify-between items-center mb-4">
         <Input
-          placeholder="Search teachers..."
+          placeholder="Search teachers by email..."
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value)
@@ -156,9 +162,21 @@ export default function TeachersTable() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Departments</SelectItem>
-            {departments.map((dept) => (
-              <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-            ))}
+            {isDepartmentsLoading ? (
+              <SelectItem value="ok" disabled>
+                Loading departments...
+              </SelectItem>
+            ) : departments.length > 0 ? (
+              departments.map((dept) => (
+                <SelectItem key={dept._id} value={dept.departmentName}>
+                  {dept.departmentName}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="no" disabled>
+                No departments found
+              </SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>
@@ -173,6 +191,7 @@ export default function TeachersTable() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[60px]">Photo</TableHead>
                   <TableHead className="w-[80px]">ID</TableHead>
                   <TableHead className="min-w-[120px]">First Name</TableHead>
                   <TableHead className="min-w-[120px]">Last Name</TableHead>
@@ -190,27 +209,38 @@ export default function TeachersTable() {
                 {currentTeachers.length > 0 ? (
                   currentTeachers.map((teacher, index) => (
                     <TableRow key={teacher._id}>
+                      <TableCell>
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 overflow-hidden">
+                          {isValidPhotoUrl(teacher.profilePhoto) ? (
+                            <img
+                              src={teacher.profilePhoto || "/placeholder.svg"}
+                              alt={`${teacher.firstName} ${teacher.lastName}`}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <User className="h-5 w-5 text-gray-400" />
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>{teacher._id}</TableCell>
                       <TableCell>{teacher.firstName}</TableCell>
                       <TableCell>{teacher.lastName}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{teacher.email}</TableCell>
                       <TableCell>{teacher.phone}</TableCell>
-                      <TableCell>{teacher.department}</TableCell>
+                      <TableCell>
+                        {departments.find((dept) => dept._id === teacher.department)?.name || teacher.department}
+                      </TableCell>
                       <TableCell>{teacher.gender}</TableCell>
                       <TableCell className="max-w-[150px] truncate">{teacher.address}</TableCell>
                       <TableCell className="max-w-[150px] truncate">{teacher.qualification}</TableCell>
                       <TableCell>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleEditTeacher(teacher)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => handleEditTeacher(teacher)}>
                           <Edit className="h-4 w-4" />
                         </Button>
                       </TableCell>
                       <TableCell>
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteTeacher(teacher._id)}
                           disabled={deleteLoading === teacher._id}
@@ -226,7 +256,7 @@ export default function TeachersTable() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={11} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={12} className="text-center py-8 text-gray-500">
                       No teachers found
                     </TableCell>
                   </TableRow>
@@ -267,8 +297,8 @@ export default function TeachersTable() {
         </>
       )}
 
-      <AddTeacherModal 
-        isOpen={isModalOpen} 
+      <AddTeacherModal
+        isOpen={isModalOpen}
         onClose={handleCloseModal}
         teacherData={selectedTeacher}
         onSuccess={fetchTeachers}
@@ -276,3 +306,4 @@ export default function TeachersTable() {
     </div>
   )
 }
+

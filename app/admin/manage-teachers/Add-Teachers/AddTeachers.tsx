@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { toast } from "react-toastify"  
+import { toast } from "react-toastify"
 import { activities } from "@/lib/activities"
 import { addActivity } from "@/lib/actitivityFunctions"
 
@@ -50,7 +50,13 @@ export default function AddTeacherModal({ isOpen, onClose, teacherData, onSucces
     qualification: "",
   })
 
+  const [departments, setDepartments] = useState<{ _id: string; name: string }[]>([])
+  const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(false)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+
   useEffect(() => {
+    fetchDepartments()
+
     if (teacherData) {
       setFormData({
         firstName: teacherData.firstName,
@@ -76,6 +82,19 @@ export default function AddTeacherModal({ isOpen, onClose, teacherData, onSucces
     }
   }, [teacherData])
 
+  const fetchDepartments = async () => {
+    try {
+      setIsDepartmentsLoading(true)
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/department`)
+      setDepartments(response.data)
+    } catch (error) {
+      console.error("Error fetching departments:", error)
+      toast.error("Failed to load departments")
+    } finally {
+      setIsDepartmentsLoading(false)
+    }
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target
     setFormData((prev) => ({ ...prev, [id]: value }))
@@ -89,44 +108,54 @@ export default function AddTeacherModal({ isOpen, onClose, teacherData, onSucces
     setFormData((prev) => ({ ...prev, gender: value }))
   }
 
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const handleSubmit = async () => {
     try {
       setIsLoading(true)
-
+      console.log('formdata',formData);
       if (teacherData?._id) {
         const response = await axios.put(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers/${teacherData._id}`, formData)
-        console.log(response) 
-         if (response.data.status == 409) {
-                  toast.error(response.data.msg);
-                }  
-                else { 
-
-        toast.success("Teacher updated successfully!")  
-        const message = activities.admin.updateTeacher.description.replace('{teacherName}', formData.firstName);
-        const activity = { 
-                  title : activities.admin.updateTeacher.action, 
-                  subtitle : message, 
-                  performBy : "Admin"
-                 }; 
-                }
+        console.log(response)
+        if (response.data.status == 409) {
+          toast.error(response.data.msg)
+        } else {
+          toast.success("Teacher updated successfully!")
+          const message = activities.admin.updateTeacher.description.replace("{teacherName}", formData.firstName)
+          const activity = {
+            title: activities.admin.updateTeacher.action,
+            subtitle: message,
+            performBy: "Admin", 
+            
+          }
+          const upd = await addActivity(activity)
+        }
       } else {
         const response = await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers/add`, formData)
-        console.log(response) 
-         if (response.data.status == 409) {
-                  toast.error(response.data.msg);
-                }   
-                else {
-
-        toast.success("Teacher added successfully!")  
-        const message = activities.admin.addTeacher.description.replace('{teacherName}', formData.firstName);
-          const activity = { 
-                    title : activities.admin.addTeacher.action, 
-                    subtitle : message, 
-                    performBy : "Admin"
-                   }; 
-                  const act =  await addActivity(activity);  
-      } 
-    }
+        console.log(response)
+        if (response.data.status == 409) {
+          toast.error(response.data.msg)
+        } else {
+          toast.success("Teacher added successfully!")
+          const message = activities.admin.addTeacher.description.replace("{teacherName}", formData.firstName)
+          const activity = {
+            title: activities.admin.addTeacher.action,
+            subtitle: message,
+            performBy: "Admin",
+          } 
+          const act = await addActivity(activity) 
+          console.log('act',act)
+        }
+      }
 
       onSuccess()
       onClose()
@@ -169,17 +198,29 @@ export default function AddTeacherModal({ isOpen, onClose, teacherData, onSucces
                 <CardContent className="space-y-4">
                   <div className="flex flex-col items-center">
                     <div className="relative">
-                      <div className="flex h-32 w-32 sm:h-40 sm:w-40 items-center justify-center rounded-full bg-gray-100">
-                        <User className="h-16 w-16 sm:h-20 sm:w-20 text-gray-400" />
+                      <div className="flex h-32 w-32 sm:h-40 sm:w-40 items-center justify-center rounded-full bg-gray-100 overflow-hidden">
+                        {photoPreview ? (
+                          <img
+                            src={photoPreview || "/placeholder.svg"}
+                            alt="Teacher preview"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-16 w-16 sm:h-20 sm:w-20 text-gray-400" />
+                        )}
                       </div>
-                      <button className="absolute bottom-0 right-0 rounded-full bg-black p-2 text-white shadow-lg">
+                      <label className="absolute bottom-0 right-0 rounded-full bg-black p-2 text-white shadow-lg cursor-pointer">
                         <Camera className="h-4 w-4 sm:h-5 sm:w-5" />
-                      </button>
+                        <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                      </label>
                     </div>
-                    <Button variant="outline" className="mt-4">
-                      <Upload className="mr-2 h-4 w-4" />
-                      Upload Photo
-                    </Button>
+                    <label className="cursor-pointer">
+                      <Button variant="outline" className="mt-4">
+                        <Upload className="mr-2 h-4 w-4" />
+                        Upload Photo
+                      </Button>
+                      <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                    </label>
                   </div>
 
                   <Separator />
@@ -266,11 +307,21 @@ export default function AddTeacherModal({ isOpen, onClose, teacherData, onSucces
                         <SelectValue placeholder="Select department" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Mathematics">Mathematics</SelectItem>
-                        <SelectItem value="Science">Science</SelectItem>
-                        <SelectItem value="English">English</SelectItem>
-                        <SelectItem value="History">History</SelectItem>
-                        <SelectItem value="Cardiology">Cardiology</SelectItem>
+                      {isDepartmentsLoading ? (
+  <SelectItem value="ok" disabled>
+    Loading departments...
+  </SelectItem>
+) : departments.length > 0 ? (
+  departments.map((dept) => (
+    <SelectItem key={dept._id} value={dept.departmentName}>
+      {dept.departmentName}
+    </SelectItem>
+  ))
+) : (
+  <SelectItem value="none" disabled>
+    No departments available
+  </SelectItem>
+)}
                       </SelectContent>
                     </Select>
                   </div>

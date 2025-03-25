@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Loader2, Plus, Trash } from "lucide-react" // Import Trash icon
-import { toast } from "react-toastify" 
-import { activities } from "@/lib/activities" 
+import { toast } from "react-toastify"
+import { activities } from "@/lib/activities"
 import { addActivity } from "@/lib/actitivityFunctions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -29,12 +29,15 @@ export default function DepartmentsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false) // State for delete confirmation modal
   const [departmentToDelete, setDepartmentToDelete] = useState<Department | null>(null) // Department to delete
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [departmentToEdit, setDepartmentToEdit] = useState<Department | null>(null)
+  const [editDepartmentName, setEditDepartmentName] = useState("")
 
   const fetchDepartments = async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/department`) 
-      
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/department`)
+
       setDepartments(response.data)
     } catch (error) {
       console.error("Error fetching departments:", error)
@@ -62,21 +65,25 @@ export default function DepartmentsPage() {
         departmentName: newDepartmentName,
       })
 
-      toast.success("Department added successfully") 
-       const message = activities.admin.addDepartment.description.replace('{departmentName}', newDepartmentName );
-          
-                     const activity = { 
-                                    title : activities.admin.addDepartment.action, 
-                                    subtitle : message, 
-                                    performBy : "Admin"
-                                   }; 
-                                  const act =  await addActivity(activity);  
+      toast.success("Department added successfully")
+      const message = activities.admin.addDepartment.description.replace("{departmentName}", newDepartmentName)
+
+      const activity = {
+        title: activities.admin.addDepartment.action,
+        subtitle: message,
+        performBy: "Admin",
+      }
+      const act = await addActivity(activity)
       setNewDepartmentName("")
       setIsModalOpen(false)
-      fetchDepartments() // Refresh the list
-    } catch (error) {
-      console.error("Error adding department:", error)
-      toast.error("Failed to add department")
+      fetchDepartments() 
+    } catch (error: any) {
+      console.error("Error updating department:", error)
+      if (error.response && error.response.status === 409) {
+        toast.error(error.response.data.message)
+      } else {
+        toast.error("Failed to update department maybe This department already exists")
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -88,27 +95,78 @@ export default function DepartmentsPage() {
     try {
       await axios.delete(`${process.env.NEXT_PUBLIC_SRS_SERVER}/department/${departmentToDelete._id}`)
       toast.success("Department deleted successfully")
-      fetchDepartments() 
-       const message = activities.admin.deleteDepartment.description.replace('{departmentName}', newDepartmentName );
-          
-                                const activity = { 
-                                    title : activities.admin.deleteDepartment.action, 
-                                    subtitle : message, 
-                                    performBy : "Admin"
-                                   }; 
-                                  const act =  await addActivity(activity);  
-    } catch (error) {
-      console.error("Error deleting department:", error)
-      toast.error("Failed to delete department")
-    } finally {
+      fetchDepartments()
+      const message = activities.admin.deleteDepartment.description.replace("{departmentName}", newDepartmentName)
+
+      const activity = {
+        title: activities.admin.deleteDepartment.action,
+        subtitle: message,
+        performBy: "Admin",
+      }
+      const act = await addActivity(activity)
+    } catch (error: any) {
+      console.error("Error updating department:", error)
+      if (error.response && error.response.status === 400) {
+        toast.error(error.response.data.message)
+      } else {
+        toast.error("Failed to delete")
+      } 
+    }
+     finally {
       setIsDeleteModalOpen(false)
-      setDepartmentToDelete(null) 
+      setDepartmentToDelete(null)
     }
   }
 
   const openDeleteConfirmationModal = (department: Department) => {
     setDepartmentToDelete(department) // Set the department to delete
     setIsDeleteModalOpen(true) // Open the delete confirmation modal
+  }
+
+  const openEditModal = (department: Department) => {
+    setDepartmentToEdit(department)
+    setEditDepartmentName(department.departmentName)
+    setIsEditModalOpen(true)
+  }
+
+  const handleEditDepartment = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!editDepartmentName.trim() || !departmentToEdit) {
+      toast.error("Department name is required")
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      await axios.put(`${process.env.NEXT_PUBLIC_SRS_SERVER}/department/${departmentToEdit._id}`, {
+        departmentName: editDepartmentName,
+      })
+
+      toast.success("Department updated successfully")
+      const message =
+        activities.admin.updateDepartment?.description?.replace("{departmentName}", editDepartmentName) ||
+        `Updated department ${editDepartmentName}`
+
+      const activity = {
+        title: activities.admin.updateDepartment?.action || "Update Department",
+        subtitle: message,
+        performBy: "Admin",
+      }
+      await addActivity(activity)
+
+      setIsEditModalOpen(false)
+      fetchDepartments() 
+    } catch (error: any) {
+      console.error("Error updating department:", error)
+      if (error.response && error.response.status === 409) {
+        toast.error(error.response.data.message)
+      } else {
+        toast.error("Failed to update department maybe This department already exists")
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -131,14 +189,37 @@ export default function DepartmentsPage() {
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-lg">{department.departmentName}</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => openDeleteConfirmationModal(department)}
-                    className="text-red-500 hover:bg-red-50"
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openEditModal(department)}
+                      className="text-blue-500 hover:bg-blue-50"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="lucide lucide-pencil"
+                      >
+                        <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                      </svg>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openDeleteConfirmationModal(department)}
+                      className="text-red-500 hover:bg-red-50"
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -203,23 +284,57 @@ export default function DepartmentsPage() {
             </p>
           </div>
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsDeleteModalOpen(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
               Cancel
             </Button>
-            <Button
-              type="button"
-              className="bg-red-500 text-white hover:bg-red-600"
-              onClick={handleDeleteDepartment}
-            >
+            <Button type="button" className="bg-red-500 text-white hover:bg-red-600" onClick={handleDeleteDepartment}>
               Confirm Delete
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Department Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Department</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditDepartment}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="editDepartmentName" className="text-right col-span-1">
+                  Name
+                </label>
+                <Input
+                  id="editDepartmentName"
+                  value={editDepartmentName}
+                  onChange={(e) => setEditDepartmentName(e.target.value)}
+                  className="col-span-3"
+                  placeholder="Enter department name"
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)} disabled={isSubmitting}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-black text-white hover:bg-gray-800" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Update"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
+

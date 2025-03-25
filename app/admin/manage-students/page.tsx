@@ -4,8 +4,8 @@ import { useEffect, useState, useCallback } from "react"
 import { ChevronLeft, ChevronRight, Edit, Trash2, Plus, Copy, Check, Loader2, FileText, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { debounce } from "lodash" 
-import { activities } from "@/lib/activities" 
+import { debounce } from "lodash"
+import { activities } from "@/lib/activities"
 import { addActivity } from "@/lib/actitivityFunctions"
 import { ExcelUploadModal } from "./Add-students/excellUpload"
 import { toast } from "react-toastify"
@@ -30,9 +30,14 @@ export default function StudentsTable() {
   const [copiedId, setCopiedId] = useState(null)
 
   const fetchStudentData = useCallback(async () => {
-    try {
+    try { 
+      console.log(classFilter);
       setIsLoading(true)
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student`)
+      const url =
+        classFilter === "all"
+          ? `${process.env.NEXT_PUBLIC_SRS_SERVER}/student`
+          : `${process.env.NEXT_PUBLIC_SRS_SERVER}/student?className=${classFilter}`
+      const response = await axios.get(url)
       console.log("response", response)
       setStudents(response.data.data || [])
       setTotalPages(response.data.totalPages || 0)
@@ -44,7 +49,7 @@ export default function StudentsTable() {
       console.error("Error fetching student data:", error)
       setIsLoading(false)
     }
-  }, [])
+  }, [classFilter])
   const fetchStudentDataBystudentId = useCallback(
     debounce(async (studentId: any) => {
       try {
@@ -66,8 +71,8 @@ export default function StudentsTable() {
   )
 
   useEffect(() => {
-    fetchStudentData(currentPage)
-  }, [currentPage, fetchStudentData])
+    fetchStudentData()
+  }, [currentPage, fetchStudentData, classFilter])
 
   const handlePageChange = (newPage: any) => {
     setCurrentPage(newPage)
@@ -173,7 +178,7 @@ export default function StudentsTable() {
     }
     return String(student[key] || "")
   }
-  const handleDelete = async (id: any , name : any) => {
+  const handleDelete = async (id: any, name: any) => {
     setIsLoading(true)
 
     const response = await axios.delete(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student/${id}`)
@@ -185,17 +190,17 @@ export default function StudentsTable() {
       closeOnClick: true,
       pauseOnHover: true,
       draggable: true,
-    }) 
+    })
 
-    await fetchStudentData() 
-    const message = activities.admin.deleteStudent.description.replace('{courseName}', name );
-    
-               const activity = { 
-                              title : activities.admin.deleteStudent.action, 
-                              subtitle : message, 
-                              performBy : "Admin"
-                             }; 
-                            const act =  await addActivity(activity);  
+    await fetchStudentData()
+    const message = activities.admin.deleteStudent.description.replace("{courseName}", name)
+
+    const activity = {
+      title: activities.admin.deleteStudent.action,
+      subtitle: message,
+      performBy: "Admin",
+    }
+    const act = await addActivity(activity)
     setIsLoading(false)
   }
   return (
@@ -227,7 +232,7 @@ export default function StudentsTable() {
 
       <div className="flex justify-between items-center mb-4">
         <Input
-          placeholder="Search students..."
+          placeholder="Search students by student ID.."
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value)
@@ -241,8 +246,8 @@ export default function StudentsTable() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Classes</SelectItem>
-            {[9, 10, 11, 12].map((classNum) => (
-              <SelectItem key={classNum} value={classNum.toString()}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((classNum) => (
+              <SelectItem key={classNum} value={classNum}>
                 Class {classNum}
               </SelectItem>
             ))}
@@ -293,7 +298,7 @@ export default function StudentsTable() {
                     </Button>
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
-                    <Button onClick={() => handleDelete(student._id , student.firstName)} variant="ghost" size="sm">
+                    <Button onClick={() => handleDelete(student._id, student.firstName)} variant="ghost" size="sm">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>

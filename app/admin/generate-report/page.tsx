@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { Download, FileText, Filter, Printer, Search } from "lucide-react"
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import axios from "axios"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
@@ -45,6 +46,13 @@ interface Student {
   enrollDate: string
   expectedGraduation: string
   guardian: Guardian
+  transcripts: string[]
+  iipFlag: string
+  honorRolls: boolean
+  athletics: boolean
+  clubs: string
+  lunch: string
+  nationality: string
   profilePhoto: string
 }
 
@@ -126,7 +134,18 @@ export default function ReportsPage() {
 
     return params.toString()
   }
-
+  const [departments, setDepartments] = useState([])
+  React.useEffect(() => {
+    fetchDepartments()
+  }, [])
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/department`)
+      setDepartments(response.data)
+    } catch (error) {
+      console.error("Error fetching departments:", error)
+    }
+  }
   const fetchData = async () => {
     setLoading(true)
     setError(null)
@@ -203,12 +222,20 @@ export default function ReportsPage() {
         Email: student.email,
         Phone: student.phone,
         "Enroll Date": formatDate(student.enrollDate),
+        "Expected Graduation": formatDate(student.expectedGraduation),
         "Guardian Name": student.guardian.guardianName,
         "Guardian Relation": student.guardian.guardianRelation,
         "Guardian Phone": student.guardian.guardianPhone,
         "Guardian Email": student.guardian.guardianEmail,
+        "Guardian Profession": student.guardian.guardianProfession,
+        "Honor Rolls": student.honorRolls ? "Yes" : "No",
+        Athletics: student.athletics ? "Yes" : "No",
+        Clubs: student.clubs,
+        Lunch: student.lunch,
+        Nationality: student.nationality,
+        "IIP Flag": student.iipFlag,
+        Transcripts: student.transcripts ? student.transcripts.join(", ") : "",
         Address: student.address,
-        "Expected Graduation": formatDate(student.expectedGraduation),
       }))
     } else {
       const response = await fetch(`http://213.210.37.77:3014/teachers${queryParams ? `?${queryParams}` : ""}`)
@@ -349,6 +376,14 @@ export default function ReportsPage() {
                       <SelectValue placeholder="Select grade level" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="1">Class 1</SelectItem>
+                      <SelectItem value="2">Class 2</SelectItem>
+                      <SelectItem value="3">Class 3</SelectItem>
+                      <SelectItem value="4">Class 4</SelectItem>
+                      <SelectItem value="5">Class 5</SelectItem>
+                      <SelectItem value="6">Class 6</SelectItem>
+                      <SelectItem value="7">Class 7</SelectItem>
+                      <SelectItem value="8">Class 8</SelectItem>
                       <SelectItem value="9">Class 9</SelectItem>
                       <SelectItem value="10">Class 10</SelectItem>
                       <SelectItem value="11">Class 11</SelectItem>
@@ -356,16 +391,16 @@ export default function ReportsPage() {
                     </SelectContent>
                   </Select>
                 ) : (
-                  <Select value={department} onValueChange={setDepartment}>
-                    <SelectTrigger>
+                  <Select onValueChange={(value) => setDepartment(value)} value={department}>
+                    <SelectTrigger id="department" className="border-gray-300 focus:border-black focus:ring-black">
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Mathematics">Mathematics</SelectItem>
-                      <SelectItem value="Science">Science</SelectItem>
-                      <SelectItem value="English">English</SelectItem>
-                      <SelectItem value="History">History</SelectItem>
-                      <SelectItem value="Cardiology">Cardiology</SelectItem>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept._id} value={dept.departmentName}>
+                          {dept.departmentName}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 )}
@@ -468,6 +503,13 @@ export default function ReportsPage() {
                           <TableHead className="w-[150px] whitespace-nowrap">Guardian Phone</TableHead>
                           <TableHead className="w-[200px] whitespace-nowrap">Guardian Email</TableHead>
                           <TableHead className="w-[150px] whitespace-nowrap">Guardian Profession</TableHead>
+                          <TableHead className="w-[120px] whitespace-nowrap">Expected Graduation</TableHead>
+                          <TableHead className="w-[100px] whitespace-nowrap">Honor Rolls</TableHead>
+                          <TableHead className="w-[100px] whitespace-nowrap">Athletics</TableHead>
+                          <TableHead className="w-[120px] whitespace-nowrap">Clubs</TableHead>
+                          <TableHead className="w-[100px] whitespace-nowrap">Lunch</TableHead>
+                          <TableHead className="w-[120px] whitespace-nowrap">Nationality</TableHead>
+                          <TableHead className="w-[100px] whitespace-nowrap">IIP Flag</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -486,12 +528,20 @@ export default function ReportsPage() {
                             <TableCell className="whitespace-nowrap">{student.guardian.guardianPhone}</TableCell>
                             <TableCell className="whitespace-nowrap">{student.guardian.guardianEmail}</TableCell>
                             <TableCell className="whitespace-nowrap">{student.guardian.guardianProfession}</TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {formatDate(student.expectedGraduation)}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">{student.honorRolls ? "Yes" : "No"}</TableCell>
+                            <TableCell className="whitespace-nowrap">{student.athletics ? "Yes" : "No"}</TableCell>
+                            <TableCell className="whitespace-nowrap">{student.clubs}</TableCell>
+                            <TableCell className="whitespace-nowrap">{student.lunch}</TableCell>
+                            <TableCell className="whitespace-nowrap">{student.nationality}</TableCell>
+                            <TableCell className="whitespace-nowrap">{student.iipFlag}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   </div>
-
                   {pagination.totalPages > 1 && (
                     <div className="py-4">
                       <Pagination>

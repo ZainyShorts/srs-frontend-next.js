@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { CheckIcon, Loader2, Plus, Trash2 } from "lucide-react"
+import { CheckIcon, Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import axios from "axios"
 import { toast } from "react-toastify"
 
@@ -12,8 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea" 
-import { activities } from "@/lib/activities" 
+import { Textarea } from "@/components/ui/textarea"
+import { activities } from "@/lib/activities"
 import { addActivity } from "@/lib/actitivityFunctions"
 import {
   Dialog,
@@ -60,6 +60,10 @@ export default function CoursesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null)
+
+  // Edit state
+  const [isEditing, setIsEditing] = useState(false)
+  const [courseToEdit, setCourseToEdit] = useState<Course | null>(null)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -177,12 +181,40 @@ export default function CoursesPage() {
       active: false,
       special: false,
     })
+    setIsEditing(false)
+    setCourseToEdit(null)
   }
 
-  // Open modal
+  // Open modal for adding a new course
   const openModal = () => {
     resetForm()
     setIsModalOpen(true)
+  }
+
+  // Open modal for editing an existing course
+  const openEditModal = (course: Course) => {
+    setCourseToEdit(course)
+    setIsEditing(true)
+
+    // Populate form with course data
+    setFormData({
+      courseName: course.courseName,
+      courseCode: course.courseCode,
+      departmentId: course.departmentId?._id || "",
+      Prerequisites: course.Prerequisites,
+      description: course.description,
+      courseCredit: course.courseCredit.toString(),
+      active: course.active,
+      special: course.special,
+    })
+
+    setIsModalOpen(true)
+  }
+
+  // Handle modal close
+  const handleModalClose = () => {
+    resetForm()
+    setIsModalOpen(false)
   }
 
   // Open delete confirmation modal
@@ -197,14 +229,14 @@ export default function CoursesPage() {
     try {
       setIsDeleting(true)
       await axios.delete(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course/${courseToDelete._id}`)
-      toast.success("Course deleted successfully!") 
-      const message = activities.admin.deleteCourse.description.replace('{courseName}', courseToDelete.courseName);
-           const activity = { 
-                          title : activities.admin.deleteCourse.action, 
-                          subtitle : message, 
-                          performBy : "Admin"
-                         }; 
-                        const act =  await addActivity(activity);  
+      toast.success("Course deleted successfully!")
+      const message = activities.admin.deleteCourse.description.replace("{courseName}", courseToDelete.courseName)
+      const activity = {
+        title: activities.admin.deleteCourse.action,
+        subtitle: message,
+        performBy: "Admin",
+      }
+      const act = await addActivity(activity)
       setIsDeleteModalOpen(false)
       setCourseToDelete(null)
       fetchCourses() // Refresh courses list
@@ -216,7 +248,7 @@ export default function CoursesPage() {
     }
   }
 
-  // Handle form submission
+  // Handle form submission (for both add and edit)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -226,7 +258,6 @@ export default function CoursesPage() {
       return
     }
 
-    // Ensure at least one of active or special is true
     if (!formData.active && !formData.special) {
       toast.error("Either Active or Special status must be selected")
       return
@@ -239,16 +270,29 @@ export default function CoursesPage() {
         ...formData,
         courseCredit: formData.courseCredit ? Number.parseInt(formData.courseCredit) : undefined,
       }
-      await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course/add`, dataToSubmit)
-      toast.success("Course added successfully!")   
-      const message = activities.admin.addCourse.description.replace('{courseName}', formData.courseName);
-
-           const activity = { 
-                          title : activities.admin.addCourse.action, 
-                          subtitle : message, 
-                          performBy : "Admin"
-                         }; 
-                        const act =  await addActivity(activity);  
+      console.log(dataToSubmit)
+      if (isEditing && courseToEdit) {
+      const res =  await axios.patch(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course/${courseToEdit._id}`, dataToSubmit) 
+      console.log('res',res)
+        toast.success("Course updated successfully!")
+        const message = activities.admin.updatedCourse.description.replace("{courseName}", formData.courseName)
+        const activity = {
+          title: activities.admin.updatedCourse.action,
+          subtitle: message,
+          performBy: "Admin",
+        }
+        const act = await addActivity(activity)
+      } else {
+        await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course/add`, dataToSubmit)
+        toast.success("Course added successfully!")
+        const message = activities.admin.addCourse.description.replace("{courseName}", formData.courseName)
+        const activity = {
+          title: activities.admin.addCourse.action,
+          subtitle: message,
+          performBy: "Admin",
+        }
+        const act = await addActivity(activity)
+      }
 
       setIsModalOpen(false)
       resetForm()
@@ -258,8 +302,8 @@ export default function CoursesPage() {
         toast.error(error.response.data.message)
         return
       }
-      console.error("Error adding course:", error)
-      toast.error("Failed to add course")
+      console.error(`Error ${isEditing ? "updating" : "adding"} course:`, error)
+      toast.error(`Failed to ${isEditing ? "update" : "add"} course`)
     } finally {
       setIsSubmitting(false)
     }
@@ -274,19 +318,12 @@ export default function CoursesPage() {
   const handleSwitchChange = (field: "active" | "special") => {
     setFormData((prev) => {
       if (field === "active") {
-        if (!prev.active) {
-          return { ...prev, active: true, special: false };
-        }
-        return { ...prev, active: false };
-      } 
-      else {
-        if (!prev.special) {
-          return { ...prev, special: true, active: false };
-        }
-        return { ...prev, special: false };
+        return { ...prev, active: !prev.active }
+      } else {
+        return { ...prev, special: !prev.special }
       }
-    });
-  };
+    })
+  }
 
   const handleCreditChange = (value: string) => {
     setFormData((prev) => ({ ...prev, courseCredit: value }))
@@ -359,14 +396,24 @@ export default function CoursesPage() {
                     <CardTitle className="text-xl">{course.courseName}</CardTitle>
                     <CardDescription className="mt-1">Code: {course.courseCode}</CardDescription>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => openDeleteModal(course)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                      onClick={() => openEditModal(course)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => openDeleteModal(course)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -406,13 +453,15 @@ export default function CoursesPage() {
         </div>
       )}
 
-      {/* Add Course Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      {/* Add/Edit Course Modal */}
+      <Dialog open={isModalOpen} onOpenChange={handleModalClose}>
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add New Course</DialogTitle>
+            <DialogTitle>{isEditing ? "Edit Course" : "Add New Course"}</DialogTitle>
             <DialogDescription>
-              Enter the details for the new course you want to add to the curriculum.
+              {isEditing
+                ? "Update the details for this course."
+                : "Enter the details for the new course you want to add to the curriculum."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
@@ -491,7 +540,12 @@ export default function CoursesPage() {
                   type="number"
                   placeholder="3"
                   value={formData.courseCredit}
-                  onChange={(e) => handleCreditChange(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (/^\d*$/.test(value)) {
+                      handleCreditChange(value);
+                    }
+                  }}
                   className="border-gray-300 focus:border-black focus:ring-black"
                 />
               </div>
@@ -503,11 +557,10 @@ export default function CoursesPage() {
                       Active Course
                     </Label>
                     <div
-                      className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 
+                      className="relative inline-flex h-6 w-11 items-center cursor-pointer rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 
         bg-input data-[state=checked]:bg-black"
-        data-state={
-          formData.active && !formData.special ? "checked" : "unchecked"
-               }                       role="switch"
+                      data-state={formData.active ? "checked" : "unchecked"}
+                      role="switch"
                       aria-checked={formData.active}
                       onClick={() => handleSwitchChange("active")}
                     >
@@ -525,12 +578,10 @@ export default function CoursesPage() {
                       Special Course
                     </Label>
                     <div
-                      className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 
+                      className="relative inline-flex h-6 w-11 items-center cursor-pointer rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 
         bg-input data-[state=checked]:bg-black"
-            data-state={
-          formData.special && !formData.active ? "checked" : "unchecked"
-               }              
-                       role="switch"
+                      data-state={formData.special ? "checked" : "unchecked"}
+                      role="switch"
                       aria-checked={formData.special}
                       onClick={() => handleSwitchChange("special")}
                     >
@@ -560,7 +611,7 @@ export default function CoursesPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setIsModalOpen(false)}
+                onClick={handleModalClose}
                 disabled={isSubmitting}
                 className="border-gray-300 hover:bg-gray-100"
               >
@@ -570,11 +621,11 @@ export default function CoursesPage() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Adding Course...
+                    {isEditing ? "Updating Course..." : "Adding Course..."}
                   </>
                 ) : (
                   <>
-                    <CheckIcon className="mr-2 h-4 w-4" /> Add Course
+                    <CheckIcon className="mr-2 h-4 w-4" /> {isEditing ? "Update Course" : "Add Course"}
                   </>
                 )}
               </Button>

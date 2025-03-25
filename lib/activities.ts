@@ -15,7 +15,11 @@ export const activities = {
       updateStudent: {
         action: "Updated a student",
         description: "Record for {studentName} was Updated"
-      }, 
+      },  
+      updatedCourse : { 
+         action: "Updated a Course",
+        description: "Record for {courseName} was Updated"
+      },
       addTeacher: {
         action: "Added a new teacher",
         description: "New Teacher {teacherName} was registered"

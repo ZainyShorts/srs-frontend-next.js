@@ -236,7 +236,7 @@ export default function ScheduleCoursePage() {
   const fetchCourses = async () => {
     try {
       setIsCoursesLoading(true)
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course`)
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course?active=true`)
       setCourses(response.data)
     } catch (error) {
       console.error("Error fetching courses:", error)

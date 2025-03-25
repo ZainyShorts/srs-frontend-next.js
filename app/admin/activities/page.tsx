@@ -62,7 +62,7 @@ export default function ActivitiesPage() {
         }
       })
 
-      setActivities(transformedActivities.reverse())
+      setActivities(transformedActivities)
     } catch (err) {
       console.error("Error fetching activities:", err)
       setError("Failed to load activities. Please try again later.")
