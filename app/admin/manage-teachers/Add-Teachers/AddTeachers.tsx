@@ -137,7 +137,9 @@ export default function AddTeacherModal({ isOpen, onClose, teacherData, onSucces
             performBy: "Admin", 
             
           }
-          const upd = await addActivity(activity)
+          const upd = await addActivity(activity) 
+          onSuccess()
+          onClose()
         }
       } else {
         const response = await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers/add`, formData)
@@ -154,11 +156,11 @@ export default function AddTeacherModal({ isOpen, onClose, teacherData, onSucces
           } 
           const act = await addActivity(activity) 
           console.log('act',act)
+          onSuccess()
+          onClose()
         }
       }
 
-      onSuccess()
-      onClose()
       setFormData({
         firstName: "",
         lastName: "",

@@ -458,8 +458,9 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
           const act =  await addActivity(activity);  
           console.log('activity' , act);
            
-        
-        }
+          resetForm()
+          onClose()
+        }c
       } else {
         apiData = {
           studentId: formData.studentId || "",
@@ -514,10 +515,10 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
           const act =  await addActivity(activity);  
           console.log('activity' , act);
            
+          resetForm()
+          onClose()
         }
 
-        resetForm()
-        onClose()
       }
     } catch (error) {
       if (error.response && error.response.status === 409) {
