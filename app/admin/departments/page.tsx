@@ -190,7 +190,7 @@ export default function DepartmentsPage() {
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-lg">{department.departmentName}</CardTitle>
                   <div className="flex gap-2">
-                    <Button
+                    {/* <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => openEditModal(department)}
@@ -210,7 +210,7 @@ export default function DepartmentsPage() {
                       >
                         <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
                       </svg>
-                    </Button>
+                    </Button> */}
                     <Button
                       variant="ghost"
                       size="icon"

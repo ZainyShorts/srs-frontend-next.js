@@ -32,6 +32,10 @@ export const activities = {
         action: "Deleted a student record",
         description: "Student record for {studentName} was removed"
       },
+      deleteTeacher: {
+        action: "Deleted a teacher record",
+        description: "Teacher record was removed"
+      },
       addDepartment: {
         action: "Added a new department",
         description: "New department {departmentName} was created"
