@@ -137,7 +137,7 @@ export default function AddTeacherModal({ isOpen, onClose, teacherData, onSucces
             performBy: "Admin", 
             
           }
-          const upd = await addActivity(activity)
+          await addActivity(activity)
         }
       } else {
         const response = await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers/add`, formData)

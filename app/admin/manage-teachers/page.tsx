@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import AddTeacherModal from "./Add-Teachers/AddTeachers"
 import { toast } from "react-toastify"
+import { activities } from "@/lib/activities"
+import { addActivity } from "@/lib/actitivityFunctions"
 
 interface Teacher {
   _id: string
@@ -81,6 +83,13 @@ export default function TeachersTable() {
       setDeleteLoading(id)
       await axios.delete(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers/${id}`)
       toast.success("Teacher deleted successfully")
+      const message = activities.admin.deleteTeacher.description
+          const activity = {
+            title: activities.admin.deleteTeacher.action,
+            subtitle: message,
+            performBy: "Admin",
+          } 
+      await addActivity(activity) 
       fetchTeachers()
     } catch (error) {
       console.error("Error deleting teacher:", error)
