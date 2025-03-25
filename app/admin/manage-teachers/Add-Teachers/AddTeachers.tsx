@@ -139,7 +139,17 @@ export default function AddTeacherModal({ isOpen, onClose, teacherData, onSucces
           }
           const upd = await addActivity(activity) 
           onSuccess()
-          onClose()
+          onClose() 
+          setFormData({
+            firstName: "",
+            lastName: "",
+            gender: "Male",
+            phone: "",
+            email: "",
+            department: "",
+            address: "",
+            qualification: "",
+          })
         }
       } else {
         const response = await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers/add`, formData)
@@ -158,19 +168,19 @@ export default function AddTeacherModal({ isOpen, onClose, teacherData, onSucces
           console.log('act',act)
           onSuccess()
           onClose()
+          setFormData({
+            firstName: "",
+            lastName: "",
+            gender: "Male",
+            phone: "",
+            email: "",
+            department: "",
+            address: "",
+            qualification: "",
+          })
         }
       }
 
-      setFormData({
-        firstName: "",
-        lastName: "",
-        gender: "Male",
-        phone: "",
-        email: "",
-        department: "",
-        address: "",
-        qualification: "",
-      })
     } catch (error: any) {
       console.error("Error saving teacher:", error)
 

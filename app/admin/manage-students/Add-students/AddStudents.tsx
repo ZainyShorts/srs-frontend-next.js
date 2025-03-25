@@ -460,7 +460,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
            
           resetForm()
           onClose()
-        }c
+        }
       } else {
         apiData = {
           studentId: formData.studentId || "",
