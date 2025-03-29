@@ -38,7 +38,7 @@ interface StudentData {
   guardianRelation: string
   guardianProfession: string
   transcripts: File[] // Add this line
-  iipFlag: string // Add this line
+  iipFlag: boolean // Add this line
   honorRolls: boolean // Add this line
   athletics: boolean // Add this line
   clubs: string // Add this line
@@ -62,7 +62,7 @@ interface FormErrors {
   guardianPhone: string
   guardianRelation: string
   guardianProfession: string
-  iipFlag: string // Add this line
+  iipFlag: boolean // Add this line
   clubs: string // Add this line
   lunch: string // Add this line
   nationality: string // Add this line
@@ -92,7 +92,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
     guardianRelation: "",
     guardianProfession: "",
     transcripts: [], // Add this line
-    iipFlag: "", // Add this line
+    iipFlag: false, // Add this line
     honorRolls: false, // Add this line
     athletics: false, // Add this line
     clubs: "", // Add this line
@@ -116,7 +116,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
     guardianPhone: "",
     guardianRelation: "",
     guardianProfession: "",
-    iipFlag: "", // Add this line
+    iipFlag: false, // Add this line
     clubs: "", // Add this line
     lunch: "", // Add this line
     nationality: "", // Add this line
@@ -176,7 +176,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
         guardianRelation: studentData.guardian.guardianRelation,
         guardianProfession: studentData.guardian.guardianProfession,
         transcripts: [], // Add this line
-        iipFlag: studentData.iipFlag || "", // Add this line
+        iipFlag: studentData.iipFlag || false, // Add this line
         honorRolls: studentData.honorRolls || false, // Add this line
         athletics: studentData.athletics || false, // Add this line
         clubs: studentData.clubs || "", // Add this line
@@ -426,7 +426,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
           guardianPhoto: formData.guardianPhoto ? "no" : "no",
           guardianRelation: formData.guardianRelation || "",
           guardianProfession: formData.guardianProfession || "",
-          iipFlag: formData.iipFlag || "",
+          iipFlag: formData.iipFlag || false,
           honorRolls: Boolean(formData.honorRolls),
           athletics: Boolean(formData.athletics),
           clubs: formData.clubs || "",
@@ -482,7 +482,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
           guardianPhoto: formData.guardianPhoto ? "no" : "no",
           guardianRelation: formData.guardianRelation || "",
           guardianProfession: formData.guardianProfession || "",
-          iipFlag: formData.iipFlag || "",
+          iipFlag: formData.iipFlag || false,
           honorRolls: Boolean(formData.honorRolls),
           athletics: Boolean(formData.athletics),
           clubs: formData.clubs || "",
@@ -559,7 +559,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
       guardianRelation: "",
       guardianProfession: "",
       transcripts: [], // Add this line
-      iipFlag: "", // Add this line
+      iipFlag: false, // Add this line
       honorRolls: false, // Add this line
       athletics: false, // Add this line
       clubs: "", // Add this line
@@ -585,7 +585,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
       guardianPhone: "",
       guardianRelation: "",
       guardianProfession: "",
-      iipFlag: "", // Add this line
+      iipFlag: false, // Add this line
       clubs: "", // Add this line
       lunch: "", // Add this line
       nationality: "", // Add this line

@@ -10,7 +10,6 @@ import { addActivity } from "@/lib/actitivityFunctions"
 import { ExcelUploadModal } from "./Add-students/excellUpload"
 import { toast } from "react-toastify"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import StudentGuardianModal from "./Add-students/AddStudents"
 import axios from "axios"
@@ -30,13 +29,13 @@ export default function StudentsTable() {
   const [copiedId, setCopiedId] = useState(null)
 
   const fetchStudentData = useCallback(async () => {
-    try { 
-      console.log(classFilter);
+    try {
+      console.log(classFilter)
       setIsLoading(true)
       const url =
         classFilter === "all"
           ? `${process.env.NEXT_PUBLIC_SRS_SERVER}/student`
-          : `${process.env.NEXT_PUBLIC_SRS_SERVER}/student?className=${classFilter}`
+          : `${process.env.NEXT_PUBLIC_SRS_SERVER}/student?className=${encodeURIComponent(classFilter)}`
       const response = await axios.get(url)
       console.log("response", response)
       setStudents(response.data.data || [])
@@ -70,18 +69,33 @@ export default function StudentsTable() {
     [],
   )
 
+  const debouncedRoomSearch = useCallback(
+    debounce((value) => {
+      setClassFilter(value || "all")
+    }, 500),
+    [],
+  )
+
   useEffect(() => {
     fetchStudentData()
   }, [currentPage, fetchStudentData, classFilter])
 
-  const handlePageChange = (newPage: any) => {
-    setCurrentPage(newPage)
-  }
-
   const getTableHeaders = () => {
     if (students.length === 0) return []
     const baseHeaders = Object.keys(students[0]).filter((key) => key !== "__v" && key !== "_id" && key !== "guardian")
-    return [...baseHeaders, "Guardian Name", "Guardian Email", "Guardian Phone", "Guardian Password"]
+
+    // Ensure iipFlag is the first column if it exists
+    const orderedHeaders = ["iipFlag"]
+
+    // Add all other headers except iipFlag (which we already added)
+    baseHeaders.forEach((header) => {
+      if (header !== "iipFlag") {
+        orderedHeaders.push(header)
+      }
+    })
+
+    // Add guardian headers
+    return [...orderedHeaders, "Guardian Name", "Guardian Email", "Guardian Phone", "Guardian Password"]
   }
 
   const formatDate = (dateString: any): string => {
@@ -99,6 +113,17 @@ export default function StudentsTable() {
   }
 
   const renderCellContent = (student: any, key: any) => {
+    if (key === "iipFlag") {
+      return (
+        <div className="flex items-center justify-center">
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-medium ${student[key] ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+          >
+            {student[key] === true ? "Yes" : "No"}
+          </span>
+        </div>
+      )
+    }
     if (key === "profilePhoto") {
       if (student[key] && student[key].startsWith("https")) {
         return (
@@ -203,6 +228,11 @@ export default function StudentsTable() {
     const act = await addActivity(activity)
     setIsLoading(false)
   }
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage)
+  }
+
   return (
     <div className="container mx-auto py-10 p-8">
       <div className="flex justify-between items-center mb-6">
@@ -240,19 +270,13 @@ export default function StudentsTable() {
           }}
           className="max-w-sm"
         />
-        <Select value={classFilter} onValueChange={setClassFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by class" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Classes</SelectItem>
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((classNum) => (
-              <SelectItem key={classNum} value={classNum}>
-                Class {classNum}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Input
+          placeholder="Search rooms..."
+          onChange={(e) => {
+            debouncedRoomSearch(e.target.value)
+          }}
+          className="w-[180px]"
+        />
       </div>
 
       {isLoading ? (

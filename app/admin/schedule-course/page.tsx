@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ScheduleModal, DeleteConfirmationModal } from "./scheduleModals"
@@ -69,23 +70,64 @@ interface FormErrors {
 const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 const timeOptions = [
-  "7:00 AM", "7:15 AM", "7:30 AM", "7:45 AM",
-  "8:00 AM", "8:15 AM", "8:30 AM", "8:45 AM",
-  "9:00 AM", "9:15 AM", "9:30 AM", "9:45 AM",
-  "10:00 AM", "10:15 AM", "10:30 AM", "10:45 AM",
-  "11:00 AM", "11:15 AM", "11:30 AM", "11:45 AM",
-  "12:00 PM", "12:15 PM", "12:30 PM", "12:45 PM",
-  "1:00 PM", "1:15 PM", "1:30 PM", "1:45 PM",
-  "2:00 PM", "2:15 PM", "2:30 PM", "2:45 PM",
-  "3:00 PM", "3:15 PM", "3:30 PM", "3:45 PM",
-  "4:00 PM", "4:15 PM", "4:30 PM", "4:45 PM",
-  "5:00 PM", "5:15 PM", "5:30 PM", "5:45 PM",
-  "6:00 PM", "6:15 PM", "6:30 PM", "6:45 PM",
-  "7:00 PM", "7:15 PM", "7:30 PM", "7:45 PM",
-  "8:00 PM", "8:15 PM", "8:30 PM", "8:45 PM",
-  "9:00 PM"
-];
-
+  "7:00 AM",
+  "7:15 AM",
+  "7:30 AM",
+  "7:45 AM",
+  "8:00 AM",
+  "8:15 AM",
+  "8:30 AM",
+  "8:45 AM",
+  "9:00 AM",
+  "9:15 AM",
+  "9:30 AM",
+  "9:45 AM",
+  "10:00 AM",
+  "10:15 AM",
+  "10:30 AM",
+  "10:45 AM",
+  "11:00 AM",
+  "11:15 AM",
+  "11:30 AM",
+  "11:45 AM",
+  "12:00 PM",
+  "12:15 PM",
+  "12:30 PM",
+  "12:45 PM",
+  "1:00 PM",
+  "1:15 PM",
+  "1:30 PM",
+  "1:45 PM",
+  "2:00 PM",
+  "2:15 PM",
+  "2:30 PM",
+  "2:45 PM",
+  "3:00 PM",
+  "3:15 PM",
+  "3:30 PM",
+  "3:45 PM",
+  "4:00 PM",
+  "4:15 PM",
+  "4:30 PM",
+  "4:45 PM",
+  "5:00 PM",
+  "5:15 PM",
+  "5:30 PM",
+  "5:45 PM",
+  "6:00 PM",
+  "6:15 PM",
+  "6:30 PM",
+  "6:45 PM",
+  "7:00 PM",
+  "7:15 PM",
+  "7:30 PM",
+  "7:45 PM",
+  "8:00 PM",
+  "8:15 PM",
+  "8:30 PM",
+  "8:45 PM",
+  "9:00 PM",
+]
 
 export default function ScheduleCoursePage() {
   // Data states
@@ -123,8 +165,20 @@ export default function ScheduleCoursePage() {
   const searchParams = useSearchParams()
   const [filterClass, setFilterClass] = useState<string>(searchParams.get("class") || "")
   const [filterSection, setFilterSection] = useState<string>(searchParams.get("section") || "")
+  const [inputClassValue, setInputClassValue] = useState<string>(searchParams.get("class") || "")
 
-  // Fetch data on component mount
+  // Debouncing for class filter
+  // const [debouncedClassFilter, setDebouncedClassFilter = useState<string>(filterClass)
+
+  // Debounce effect for class filter
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilterClass(inputClassValue)
+    }, 500) // 500ms debounce delay
+
+    return () => clearTimeout(timer)
+  }, [inputClassValue])
+
   useEffect(() => {
     fetchSchedules()
     fetchCourses()
@@ -157,6 +211,7 @@ export default function ScheduleCoursePage() {
         params.append("class", filterClass)
       }
 
+      // Only append section parameter if it's explicitly selected (not empty string)
       if (filterSection) {
         params.append("section", filterSection)
       }
@@ -330,6 +385,7 @@ export default function ScheduleCoursePage() {
 
   const clearFilters = () => {
     setFilterClass("")
+    setInputClassValue("")
     setFilterSection("")
   }
 
@@ -367,20 +423,18 @@ export default function ScheduleCoursePage() {
         <div className="flex flex-col md:flex-row gap-4 items-end">
           <div className="w-full md:w-1/4 space-y-2">
             <Label htmlFor="filterClass" className="font-medium">
-              Filter by Class
+              Filter by Room
             </Label>
-            <Select onValueChange={handleClassFilterChange} value={filterClass}>
-              <SelectTrigger id="filterClass" className="border-gray-300 focus:border-black focus:ring-black">
-                <SelectValue placeholder="All Classes" />
-              </SelectTrigger>
-              <SelectContent>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
-                  <SelectItem key={`filter-class-${num}`} value={num.toString()}>
-                    Class {num}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              id="filterClass"
+              type="number"
+              min="1"
+              max="12"
+              placeholder="Enter Room number"
+              value={inputClassValue}
+              onChange={(e) => setInputClassValue(e.target.value)}
+              className="border-gray-300 focus:border-black focus:ring-black"
+            />
           </div>
 
           <div className="w-full md:w-1/4 space-y-2">
@@ -389,10 +443,10 @@ export default function ScheduleCoursePage() {
             </Label>
             <Select onValueChange={handleSectionFilterChange} value={filterSection}>
               <SelectTrigger id="filterSection" className="border-gray-300 focus:border-black focus:ring-black">
-                <SelectValue placeholder="All Sections" />
+                <SelectValue placeholder="Select section" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Sections</SelectItem>
+                <SelectItem value="None">None</SelectItem>
                 {Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i)).map((letter) => (
                   <SelectItem key={`filter-section-${letter}`} value={letter}>
                     Section {letter}
@@ -419,7 +473,7 @@ export default function ScheduleCoursePage() {
             <span className="font-medium mr-2">Active Filters:</span>
             {filterClass && (
               <Badge variant="secondary" className="mr-2">
-                Class: {filterClass}
+                Room: {filterClass}
               </Badge>
             )}
             {filterSection && <Badge variant="secondary">Section: {filterSection}</Badge>}

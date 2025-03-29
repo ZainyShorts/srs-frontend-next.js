@@ -11,7 +11,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface StudentFormProps {
   formData: {
@@ -27,13 +26,13 @@ interface StudentFormProps {
     address: string
     enrollDate: string
     expectedGraduation: string
-    transcripts: File[] // Add this line
-    iipFlag: string // Add this line
-    honorRolls: boolean // Add this line
-    athletics: boolean // Add this line
-    clubs: string // Add this line
-    lunch: string // Add this line
-    nationality: string // Add this line
+    transcripts: File[]
+    iipFlag: boolean // Changed to boolean
+    honorRolls: boolean
+    athletics: boolean
+    clubs: string
+    lunch: string
+    nationality: string
     [key: string]: any
   }
   errors: {
@@ -55,12 +54,12 @@ interface StudentFormProps {
     [key: string]: any
   }
   photoPreview: string | null
-  transcriptPreviews?: { name: string; size: number }[] // Add this line
+  transcriptPreviews?: { name: string; size: number }[]
   onInputChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
   onSelectChange: (name: string, value: string | boolean) => void
   onPhotoChange: (e: ChangeEvent<HTMLInputElement>) => void
-  onTranscriptChange?: (e: ChangeEvent<HTMLInputElement>) => void // Add this line
-  onRemoveTranscript?: (index: number) => void // Add this line
+  onTranscriptChange?: (e: ChangeEvent<HTMLInputElement>) => void
+  onRemoveTranscript?: (index: number) => void
   onContinue: () => void
   onCancel: () => void
   disabled?: boolean
@@ -71,12 +70,12 @@ export function StudentForm({
   formData,
   errors,
   photoPreview,
-  transcriptPreviews = [], // Add this line
+  transcriptPreviews = [],
   onInputChange,
   onSelectChange,
   onPhotoChange,
-  onTranscriptChange, // Add this line
-  onRemoveTranscript, // Add this line
+  onTranscriptChange,
+  onRemoveTranscript,
   onContinue,
   onCancel,
   disabled = false,
@@ -163,7 +162,10 @@ export function StudentForm({
                 <div className="max-h-[300px] h-auto w-full overflow-x-auto rounded-md border p-2">
                   <div className="space-y-2">
                     {transcriptPreviews.map((file, index) => (
-                      <div key={index} className="flex items-center w-full overflow-x-auto bg-gray-50 justify-between rounded-md p-2 text-sm">
+                      <div
+                        key={index}
+                        className="flex items-center w-full overflow-x-auto bg-gray-50 justify-between rounded-md p-2 text-sm"
+                      >
                         <div className="flex items-center space-x-2 w-full truncate">
                           <FileText className="h-4 w-4 text-gray-500" />
                           <span className="truncate">{file.name}</span>
@@ -276,23 +278,16 @@ export function StudentForm({
                 {errors.studentId && <p className="text-sm text-red-500 mt-1">{errors.studentId}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="class">Class</Label>
-                <Select
+                <Label htmlFor="class">Home Room </Label>
+                <Input
+                  id="class"
+                  name="class"
+                  placeholder="Enter Home Room"
+                  className={`border-gray-200 ${errors.class ? "border-red-500" : ""}`}
                   value={formData.class}
-                  onValueChange={(value) => onSelectChange("class", value)}
+                  onChange={onInputChange}
                   disabled={disabled}
-                >
-                  <SelectTrigger id="class" className={errors.class ? "border-red-500" : ""}>
-                    <SelectValue placeholder="Select class" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((classNum) => (
-                      <SelectItem key={classNum} value={classNum.toString()}>
-                        Class {classNum}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
                 {errors.class && <p className="text-sm text-red-500 mt-1">{errors.class}</p>}
               </div>
             </div>
@@ -314,6 +309,7 @@ export function StudentForm({
                         Section {section}
                       </SelectItem>
                     ))}
+                    <SelectItem value="none">None</SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.section && <p className="text-sm text-red-500 mt-1">{errors.section}</p>}
@@ -400,16 +396,17 @@ export function StudentForm({
 
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="iipFlag">IIP Flag</Label>
-                <Input
-                  id="iipFlag"
-                  name="iipFlag"
-                  placeholder="Enter IIP Flag"
-                  className={`border-gray-200 ${errors.iipFlag ? "border-red-500" : ""}`}
-                  value={formData.iipFlag}
-                  onChange={onInputChange}
-                  disabled={disabled}
-                />
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="iipFlag" className="cursor-pointer">
+                    IIP Flag
+                  </Label>
+                  <Switch
+                    id="iipFlag"
+                    checked={formData.iipFlag}
+                    onCheckedChange={(checked) => onSelectChange("iipFlag", checked)}
+                    disabled={disabled}
+                  />
+                </div>
                 {errors.iipFlag && <p className="text-sm text-red-500 mt-1">{errors.iipFlag}</p>}
               </div>
               <div className="space-y-2">
@@ -627,26 +624,15 @@ export function StudentForm({
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="clubs">Clubs</Label>
-                <Select
+                <Input
+                  id="clubs"
+                  name="clubs"
+                  placeholder="Enter clubs"
+                  className={`border-gray-200 ${errors.clubs ? "border-red-500" : ""}`}
                   value={formData.clubs}
-                  onValueChange={(value) => onSelectChange("clubs", value)}
+                  onChange={onInputChange}
                   disabled={disabled}
-                >
-                  <SelectTrigger id="clubs" className={errors.clubs ? "border-red-500" : ""}>
-                    <SelectValue placeholder="Select club" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="science">Science Club</SelectItem>
-                    <SelectItem value="art">Art Club</SelectItem>
-                    <SelectItem value="music">Music Club</SelectItem>
-                    <SelectItem value="debate">Debate Club</SelectItem>
-                    <SelectItem value="chess">Chess Club</SelectItem>
-                    <SelectItem value="coding">Coding Club</SelectItem>
-                    <SelectItem value="drama">Drama Club</SelectItem>
-                    <SelectItem value="photography">Photography Club</SelectItem>
-                    <SelectItem value="none">None</SelectItem>
-                  </SelectContent>
-                </Select>
+                />
                 {errors.clubs && <p className="text-sm text-red-500 mt-1">{errors.clubs}</p>}
               </div>
               <div className="space-y-2">

@@ -369,27 +369,15 @@ export default function ReportsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>{reportType === "student" ? "Grade Level" : "Select Departments"}</Label>
+                <Label>{reportType === "student" ? "Room Number" : "Select Departments"}</Label>
                 {reportType === "student" ? (
-                  <Select value={gradeLevel} onValueChange={setGradeLevel}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select grade level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Class 1</SelectItem>
-                      <SelectItem value="2">Class 2</SelectItem>
-                      <SelectItem value="3">Class 3</SelectItem>
-                      <SelectItem value="4">Class 4</SelectItem>
-                      <SelectItem value="5">Class 5</SelectItem>
-                      <SelectItem value="6">Class 6</SelectItem>
-                      <SelectItem value="7">Class 7</SelectItem>
-                      <SelectItem value="8">Class 8</SelectItem>
-                      <SelectItem value="9">Class 9</SelectItem>
-                      <SelectItem value="10">Class 10</SelectItem>
-                      <SelectItem value="11">Class 11</SelectItem>
-                      <SelectItem value="12">Class 12</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    type="text"
+                    placeholder="Enter Home Room"
+                    value={gradeLevel}
+                    onChange={(e) => setGradeLevel(e.target.value)}
+                    className="border-gray-200"
+                  />
                 ) : (
                   <Select onValueChange={(value) => setDepartment(value)} value={department}>
                     <SelectTrigger id="department" className="border-gray-300 focus:border-black focus:ring-black">

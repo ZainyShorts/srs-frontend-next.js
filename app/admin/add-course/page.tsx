@@ -43,6 +43,7 @@ interface Course {
   courseCredit: number
   active: boolean
   special: boolean
+  duration?: string // Add duration field
 }
 
 export default function CoursesPage() {
@@ -66,6 +67,7 @@ export default function CoursesPage() {
   const [courseToEdit, setCourseToEdit] = useState<Course | null>(null)
 
   // Form state
+  // Update the formData state to include duration
   const [formData, setFormData] = useState({
     courseName: "",
     courseCode: "",
@@ -75,6 +77,7 @@ export default function CoursesPage() {
     courseCredit: "",
     active: false,
     special: false,
+    duration: "", // Add duration field
   })
 
   // Add a new state for search query and search loading
@@ -170,6 +173,7 @@ export default function CoursesPage() {
     setFormData((prev) => ({ ...prev, departmentId: value }))
   }
 
+  // Update the resetForm function to include duration
   const resetForm = () => {
     setFormData({
       courseName: "",
@@ -180,6 +184,7 @@ export default function CoursesPage() {
       courseCredit: "",
       active: false,
       special: false,
+      duration: "", // Reset duration field
     })
     setIsEditing(false)
     setCourseToEdit(null)
@@ -191,7 +196,7 @@ export default function CoursesPage() {
     setIsModalOpen(true)
   }
 
-  // Open modal for editing an existing course
+  // Update the openEditModal function to include duration
   const openEditModal = (course: Course) => {
     setCourseToEdit(course)
     setIsEditing(true)
@@ -206,6 +211,7 @@ export default function CoursesPage() {
       courseCredit: course.courseCredit.toString(),
       active: course.active,
       special: course.special,
+      duration: course.duration || "", // Add duration field
     })
 
     setIsModalOpen(true)
@@ -272,8 +278,8 @@ export default function CoursesPage() {
       }
       console.log(dataToSubmit)
       if (isEditing && courseToEdit) {
-      const res =  await axios.patch(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course/${courseToEdit._id}`, dataToSubmit) 
-      console.log('res',res)
+        const res = await axios.patch(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course/${courseToEdit._id}`, dataToSubmit)
+        console.log("res", res)
         toast.success("Course updated successfully!")
         const message = activities.admin.updatedCourse.description.replace("{courseName}", formData.courseName)
         const activity = {
@@ -327,6 +333,11 @@ export default function CoursesPage() {
 
   const handleCreditChange = (value: string) => {
     setFormData((prev) => ({ ...prev, courseCredit: value }))
+  }
+
+  // Add a handler for duration select change
+  const handleDurationChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, duration: value }))
   }
 
   return (
@@ -430,6 +441,11 @@ export default function CoursesPage() {
                   <div className="text-sm">
                     <span className="font-medium">Credits:</span> {course.courseCredit || "N/A"}
                   </div>
+                  {course.duration && (
+                    <div className="text-sm">
+                      <span className="font-medium">Duration:</span> {course.duration}
+                    </div>
+                  )}
                   <div className="flex space-x-2 mt-1">
                     {course.active && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -541,9 +557,9 @@ export default function CoursesPage() {
                   placeholder="3"
                   value={formData.courseCredit}
                   onChange={(e) => {
-                    const value = e.target.value;
+                    const value = e.target.value
                     if (/^\d*$/.test(value)) {
-                      handleCreditChange(value);
+                      handleCreditChange(value)
                     }
                   }}
                   className="border-gray-300 focus:border-black focus:ring-black"
@@ -592,6 +608,22 @@ export default function CoursesPage() {
                   </div>
                   <p className="text-xs text-gray-500">Enable if this is a special course</p>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="duration" className="font-medium">
+                  Duration
+                </Label>
+                <Select onValueChange={handleDurationChange} value={formData.duration}>
+                  <SelectTrigger id="duration" className="border-gray-300 focus:border-black focus:ring-black">
+                    <SelectValue placeholder="Select duration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Full Year">Full Year</SelectItem>
+                    <SelectItem value="Semester">Semester</SelectItem>
+                    <SelectItem value="Quarter">Quarter</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">

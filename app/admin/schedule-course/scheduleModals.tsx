@@ -306,27 +306,22 @@ export function ScheduleModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="className" className="font-medium">
-                  Class Name <span className="text-red-500">*</span>
+                  Home Room <span className="text-red-500">*</span>
                 </Label>
-                <Select onValueChange={(value) => handleSelectChange("className", value)} value={formData.className}>
-                  <SelectTrigger
-                    id="className"
-                    className={`border-gray-300 focus:border-black focus:ring-black ${errors.className ? "border-red-500" : ""}`}
-                  >
-                    <SelectValue placeholder="Select class" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
-                      <SelectItem key={`class-${num}`} value={num.toString()}>
-                        {num}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <input
+                  id="className"
+                  type="number"
+                  placeholder="Enter room number"
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    errors.className ? "border-red-500" : "border-gray-300"
+                  } focus:outline-none focus:ring-2 focus:ring-black focus:border-black`}
+                  value={formData.className}
+                  onChange={(e) => handleChange(e)}
+                />
                 {errors.className && (
                   <div className="flex items-center mt-1 text-sm text-red-500">
                     <AlertCircle className="h-3 w-3 mr-1" />
-                    Class name is required
+                    Home Room is required
                   </div>
                 )}
               </div>
@@ -342,6 +337,9 @@ export function ScheduleModal({
                     <SelectValue placeholder="Select section" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem key="section-none" value="None">
+                      None
+                    </SelectItem>
                     {Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i)).map((letter) => (
                       <SelectItem key={`section-${letter}`} value={letter}>
                         {letter}
