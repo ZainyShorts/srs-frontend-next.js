@@ -38,6 +38,11 @@ const TeacherSidebar = ({isSidebarOpen, setIsSidebarOpen}:{isSidebarOpen:boolean
       name: "Grades",
       href: "/teacher/grades",
       icon: Plus,
+    }, 
+    {
+      name: "Recent Activities",
+      href: "/teacher/activities",
+      icon: Plus,
     },
     {
       name: "Make Report",

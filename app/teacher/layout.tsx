@@ -4,7 +4,9 @@ import type React from "react"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import TeacherSidebar from "./components/Teacher-Sidebar/TeacherSidebar"
-import TeacherMobileSidebar from "./components/Teacher-Mobile-Sidebar/TeacherMobileSidebar"
+import TeacherMobileSidebar from "./components/Teacher-Mobile-Sidebar/TeacherMobileSidebar" 
+import { ToastContainer } from "react-toastify"
+
 
 export default function TeachersPortal({
   children,
@@ -48,7 +50,20 @@ export default function TeachersPortal({
       {/* Mob Sidebar */}
       <TeacherMobileSidebar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen}/>
 
-        <main className="flex-1">{children}</main>
+        <main className="flex-1">{children} 
+           <ToastContainer
+                  position="top-right"
+                  autoClose={3000}
+                  hideProgressBar={false}
+                  newestOnTop
+                  closeOnClick
+                  rtl={false}
+                  pauseOnFocusLoss
+                  draggable
+                  pauseOnHover
+                  limit={1}
+                /> 
+           </main> 
       </div>
     </div>
   )
