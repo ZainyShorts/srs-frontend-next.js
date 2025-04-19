@@ -107,6 +107,10 @@ export const activities = {
       takeAttendance: {
         action: "You have taken attendance",
         description: "Attendance recorded for {className} on {date}"
+      }, 
+      gradeUpdate: {
+        action: "You have Updated the Grades",
+        description: "Grades Updated for {className}"
       }
     }
   };

@@ -86,8 +86,9 @@ export default function AttendancePage() {
 
         setCourses(coursesData)
         setTeachers(teachersData.data)
-      } catch (err) {
-        setError("Failed to load data")
+      } catch (err) { 
+        console.log(err)
+        // setError("Failed to load data")
         console.error("Error fetching data:", err)
       } finally {
         setLoading(false)
@@ -109,7 +110,19 @@ export default function AttendancePage() {
     setAttendanceData(null)
 
     try {
-      const formattedDate = new Date(selectedDate).toISOString().split("T")[0]
+      const rawDate = selectedDate
+                      ? new Date(selectedDate)
+                      : new Date();
+                    
+                    const gbFormatted = rawDate.toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    }).replace(/\//g, "-");
+                    
+                    const [day, month, year] = gbFormatted.split("-");
+                    const formattedDate = `${year}-${month}-${day}`;
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_SRS_SERVER}/attendance/getTeacherViewAttendance?` +
           new URLSearchParams({
@@ -137,9 +150,10 @@ export default function AttendancePage() {
       }
 
       setAttendanceData(data)
-    } catch (err) {
-      setError("Failed to load attendance data")
+    } catch (err) { 
+      toast.error('No Data Found for this Room') 
       console.error("Error fetching attendance data:", err)
+      return
     } finally {
       setLoadingAttendance(false)
     }
@@ -172,12 +186,11 @@ export default function AttendancePage() {
         return
       }
 
-      // Transform student data to attendance format
       const formattedStudents = data.data.map((student: any) => ({
         _id: student._id,
         studentId: student.studentId,
         studentName: `${student.firstName} ${student.lastName}`,
-        attendance: "Present", // Default to present
+        attendance: "Present", 
         note: "",
       }))
 
@@ -293,20 +306,19 @@ export default function AttendancePage() {
     return <div className="p-6 text-red-500">{error}</div>
   }
 
-  const addActivity = async (activity: any) => {
+  const addActivity = async (activity: any) => { 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SRS_SERVER}/activity`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SRS_SERVER}/activity/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(activity),
       })
-
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
+      } 
       const data = await response.json()
       return data
     } catch (error) {
@@ -569,24 +581,20 @@ export default function AttendancePage() {
                     setSavingAttendance(true)
 
                     try {
-                      // Format the date as DD-MM-YYYY
-                      const formattedDate = selectedDate
-                        ? new Date(selectedDate)
-                            .toLocaleDateString("en-GB", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                            })
-                            .replace(/\//g, "-")
-                        : new Date()
-                            .toLocaleDateString("en-GB", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                            })
-                            .replace(/\//g, "-")
-
-                      // Prepare the payload according to the required format
+                      const rawDate = selectedDate
+                      ? new Date(selectedDate)
+                      : new Date();
+                    
+                    const gbFormatted = rawDate.toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    }).replace(/\//g, "-");
+                    
+                    const [day, month, year] = gbFormatted.split("-");
+                    const formattedDate = `${year}-${month}-${day}`;
+                    
+                    console.log(formattedDate); //
                       const payload = {
                         teacherId: selectedTeacher,
                         courseId: selectedCourse,
@@ -601,8 +609,7 @@ export default function AttendancePage() {
                           note: student.note,
                         })),
                       }
-
-                      // Make the API call
+                     console.log('data sent ' , payload);
                       const response = await axios.post(
                         `${process.env.NEXT_PUBLIC_SRS_SERVER}/attendance/markAttendance`,
                         payload,
@@ -635,23 +642,19 @@ export default function AttendancePage() {
                                 year: "numeric",
                               })
 
-                          // Replace placeholders in the description
                           const message = activities.teacher.takeAttendance.description
                             .replace("{className}", roomNumber)
                             .replace("{date}", displayDate)
 
-                          // Create activity object
                           const activity = {
                             title: activities.teacher.takeAttendance.action,
                             subtitle: message,
                             performBy: "Teacher",
                           }
 
-                          // Add the activity
                           await addActivity(activity)
                         } catch (activityError) {
                           console.error("Error logging activity:", activityError)
-                          // Don't show error to user, just log it
                         }
 
                         setCreatingAttendance(false)

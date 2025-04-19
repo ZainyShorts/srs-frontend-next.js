@@ -1,21 +1,90 @@
 "use client"
-
-import * as React from "react"
-import { BookOpen, Calendar, Clock, Users, CheckCircle, BarChart, Bell, FileText, Bookmark } from 'lucide-react'
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { BookOpen, Users, CheckCircle, Bell, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Progress } from "@/components/ui/progress"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+
+// Define types for the activity data
+interface Activity {
+  _id: string
+  title: string
+  subtitle: string
+  createdAt: string
+  performBy: string
+}
+
+interface ApiResponse {
+  data: Activity[]
+}
+
+interface TransformedActivity {
+  id: string
+  type: string
+  title: string
+  description: string
+  timestamp: string
+  user: string
+  status: string
+}
 
 export default function TeacherDashboard() {
+  const router = useRouter()
+  const [activities, setActivities] = useState<TransformedActivity[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Helper function to get relative time
+  const getRelativeTime = (date: Date): string => {
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`
+    return `${Math.floor(diffInSeconds / 86400)} days ago`
+  }
+
+  const fetchActivities = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SRS_SERVER}/activity?performBy=Teacher`)
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch activities")
+      }
+
+      const data: ApiResponse = await response.json()
+
+      const transformedActivities = data.data.map((activity) => {
+        const timestamp = getRelativeTime(new Date(activity.createdAt))
+
+        return {
+          id: activity._id,
+          type: "enrollment",
+          title: activity.title,
+          description: activity.subtitle,
+          timestamp,
+          user: activity.performBy,
+          status: "completed",
+        }
+      })
+
+      setActivities(transformedActivities)
+    } catch (err) {
+      console.error("Error fetching activities:", err)
+      setError("Failed to load activities. Please try again later.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchActivities()
+  }, [])
+
   return (
     <div className="p-8 space-y-8">
       <div className="flex justify-between items-center">
@@ -29,58 +98,42 @@ export default function TeacherDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Classes Today
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Classes Today</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">4</div>
-            <p className="text-xs text-muted-foreground">
-              2 remaining
-            </p>
+            <p className="text-xs text-muted-foreground">2 remaining</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Students
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">120</div>
-            <p className="text-xs text-muted-foreground">
-              across 5 classes
-            </p>
+            <p className="text-xs text-muted-foreground">across 5 classes</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Assignments Due
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Assignments Due</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">7</div>
-            <p className="text-xs text-muted-foreground">
-              3 need grading
-            </p>
+            <p className="text-xs text-muted-foreground">3 need grading</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Average Attendance
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Average Attendance</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">92%</div>
-            <p className="text-xs text-muted-foreground">
-              +5.2% from last week
-            </p>
+            <p className="text-xs text-muted-foreground">+5.2% from last week</p>
           </CardContent>
         </Card>
       </div>
@@ -119,78 +172,43 @@ export default function TeacherDashboard() {
         </CardContent>
       </Card>
 
-      {/* Recent Activity and To-Do List */}
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* Recent Activity */}
+      <div className="grid gap-4 md:grid-cols-1">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Recent Activity</CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => router.push("/teacher/activities")}>
+              View all
+            </Button>
           </CardHeader>
           <CardContent>
-            <div className="space-y-8">
-              {[
-                { avatar: "A", name: "Alice Johnson", action: "submitted assignment", time: "2 hours ago" },
-                { avatar: "B", name: "Bob Smith", action: "asked a question", time: "4 hours ago" },
-                { avatar: "C", name: "Charlie Brown", action: "joined your class", time: "1 day ago" },
-              ].map((item, index) => (
-                <div key={index} className="flex items-center">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={`/avatars/${item.avatar.toLowerCase()}.png`} alt={item.name} />
-                    <AvatarFallback>{item.avatar}</AvatarFallback>
-                  </Avatar>
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">{item.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {item.action}
-                    </p>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-40">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : error ? (
+              <div className="text-center text-red-500 py-4">{error}</div>
+            ) : activities.length === 0 ? (
+              <div className="text-center text-muted-foreground py-4">No recent activities found</div>
+            ) : (
+              <div className="space-y-8">
+                {activities.slice(0, 3).map((activity) => (
+                  <div key={activity.id} className="flex items-center">
+                    <Avatar className="h-9 w-9">
+                      <AvatarFallback>{activity.user.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="ml-4 space-y-1">
+                      <p className="text-sm font-medium leading-none">{activity.title}</p>
+                      <p className="text-sm text-muted-foreground">{activity.description}</p>
+                    </div>
+                    <div className="ml-auto font-medium text-sm text-muted-foreground">{activity.timestamp}</div>
                   </div>
-                  <div className="ml-auto font-medium text-sm text-muted-foreground">
-                    {item.time}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>To-Do List</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                { task: "Grade Mathematics 101 assignments", progress: 70 },
-                { task: "Prepare lesson plan for Physics 202", progress: 30 },
-                { task: "Schedule parent-teacher meetings", progress: 0 },
-                { task: "Update course materials for CS301", progress: 100 },
-              ].map((item, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex items-center">
-                    <Bookmark className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">{item.task}</span>
-                  </div>
-                  <Progress value={item.progress} className="h-2" />
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Weekly Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Weekly Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[200px] w-full">
-            {/* You would typically put a chart component here */}
-            <div className="flex items-center justify-center h-full bg-muted rounded-md">
-              <BarChart className="h-8 w-8 text-muted-foreground" />
-              <span className="ml-2 text-sm text-muted-foreground">Weekly statistics chart</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }
