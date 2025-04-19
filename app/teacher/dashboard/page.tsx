@@ -1,11 +1,12 @@
 "use client"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { BookOpen, Users, CheckCircle, Bell, FileText } from "lucide-react"
+import { BookOpen, Users, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // Define types for the activity data
 interface Activity {
@@ -30,11 +31,49 @@ interface TransformedActivity {
   status: string
 }
 
+interface TeacherStats {
+  success: boolean
+  totalStudents: number
+  todayClasses: number
+}
+
+interface ScheduleClass {
+  _id: string
+  courseId: {
+    _id: string
+    courseCode: string
+    courseName: string
+    duration: string
+  }
+  className: string
+  section: string
+  note: string
+  teacherId: {
+    _id: string
+    firstName: string
+    lastName: string
+  }
+  dayOfWeek: {
+    date: string
+    startTime: string
+    endTime: string
+  }[]
+}
+
+interface ScheduleResponse {
+  data: ScheduleClass[]
+  total: number
+}
+
 export default function TeacherDashboard() {
   const router = useRouter()
   const [activities, setActivities] = useState<TransformedActivity[]>([])
+  const [teacherStats, setTeacherStats] = useState<TeacherStats>({ success: false, totalStudents: 0, todayClasses: 0 })
+  const [scheduledClasses, setScheduledClasses] = useState<ScheduleClass[]>([])
+  const [dateOption, setDateOption] = useState<string>("today")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const teacherId = "67e2c4282c90062ca640181f" 
 
   // Helper function to get relative time
   const getRelativeTime = (date: Date): string => {
@@ -80,9 +119,66 @@ export default function TeacherDashboard() {
       setIsLoading(false)
     }
   }
+  function getDayName(offset) {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const today = new Date();
+    const todayIndex = today.getDay();
+    const targetIndex = (todayIndex + offset + 7) % 7; 
+    return days[targetIndex];
+  }
+  const fetchTeacherStats = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SRS_SERVER}/schedule/getTotalStudentsAssignedToTeacher/${teacherId}`,
+      )
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch teacher stats")
+      }
+
+      const data: TeacherStats = await response.json()
+      setTeacherStats(data)
+    } catch (err) {
+      console.error("Error fetching teacher stats:", err)
+    }
+  }
+
+  const fetchScheduledClasses = async (date: string) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SRS_SERVER}/schedule?teacherId=${teacherId}&date=${date}`)
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch scheduled classes")
+      }
+
+      const data: ScheduleResponse = await response.json()
+      setScheduledClasses(data.data)
+    } catch (err) {
+      console.error("Error fetching scheduled classes:", err)
+    }
+  } 
+  const [currentDay , setCurrent] = useState<any>(getDayName(0));
+
+  const handleDateChange = (value: string) => {
+    setDateOption(value) 
+    let dayName;  
+    if (value === 'today') { 
+      dayName = getDayName(0)  
+    } else if (value === 'yesterday') { 
+      dayName = getDayName(-1)
+    } 
+    else  { 
+      dayName = getDayName(1)
+    } 
+    setCurrent(dayName)
+      
+    fetchScheduledClasses(value)
+  }
 
   useEffect(() => {
     fetchActivities()
+    fetchTeacherStats()
+    fetchScheduledClasses(dateOption)
   }, [])
 
   return (
@@ -95,15 +191,15 @@ export default function TeacherDashboard() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Classes Today</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">4</div>
-            <p className="text-xs text-muted-foreground">2 remaining</p>
+            <div className="text-2xl font-bold">{teacherStats.todayClasses}</div>
+            <p className="text-xs text-muted-foreground">Today's scheduled classes</p>
           </CardContent>
         </Card>
         <Card>
@@ -112,61 +208,62 @@ export default function TeacherDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">120</div>
-            <p className="text-xs text-muted-foreground">across 5 classes</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Assignments Due</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">7</div>
-            <p className="text-xs text-muted-foreground">3 need grading</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Attendance</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">92%</div>
-            <p className="text-xs text-muted-foreground">+5.2% from last week</p>
+            <div className="text-2xl font-bold">{teacherStats.totalStudents}</div>
+            <p className="text-xs text-muted-foreground">assigned to you</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Upcoming Classes */}
+      {/* Scheduled Classes */}
       <Card>
-        <CardHeader>
-          <CardTitle>Upcoming Classes</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Scheduled Classes</CardTitle>
+          <div className="w-[180px]">
+            <Select value={dateOption} onValueChange={handleDateChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select date" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="yesterday">Yesterday</SelectItem>
+                <SelectItem value="tomorrow">Tomorrow</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Course</TableHead>
                 <TableHead>Class</TableHead>
+                <TableHead>Section</TableHead>
+                <TableHead>Day</TableHead>
                 <TableHead>Time</TableHead>
-                <TableHead>Room</TableHead>
-                <TableHead>Students</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {[
-                { class: "Mathematics 101", time: "10:00 AM", room: "A101", students: 30 },
-                { class: "Physics 202", time: "11:30 AM", room: "B205", students: 25 },
-                { class: "Computer Science 301", time: "2:00 PM", room: "C310", students: 20 },
-                { class: "English Literature", time: "3:30 PM", room: "D102", students: 28 },
-              ].map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{item.class}</TableCell>
-                  <TableCell>{item.time}</TableCell>
-                  <TableCell>{item.room}</TableCell>
-                  <TableCell>{item.students}</TableCell>
+              {scheduledClasses.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                    No scheduled classes found
+                  </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                scheduledClasses.map((item) => (
+                  <TableRow key={item._id}>
+                    <TableCell className="font-medium">
+                      {item.courseId.courseCode} - {item.courseId.courseName}
+                    </TableCell>
+                    <TableCell>{item.className}</TableCell>
+                    <TableCell>{item.section}</TableCell>
+                    <TableCell>{currentDay || "N/A"}</TableCell>
+                    <TableCell>
+                      {item.dayOfWeek[0]?.startTime || "N/A"} - {item.dayOfWeek[0]?.endTime || "N/A"}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
