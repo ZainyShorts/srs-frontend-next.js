@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { getLocalStorageValue } from "@/lib/utils"
 
 // Define types for the activity data
 interface Activity {
@@ -73,7 +74,7 @@ export default function TeacherDashboard() {
   const [dateOption, setDateOption] = useState<string>("today")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const teacherId = "67e2c4282c90062ca640181f" 
+  const teacherId = getLocalStorageValue("id")
 
   // Helper function to get relative time
   const getRelativeTime = (date: Date): string => {

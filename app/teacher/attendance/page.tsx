@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import axios from "axios"
+import { getLocalStorageValue } from "@/lib/utils"
 
 interface Course {
   _id: string
@@ -63,8 +64,9 @@ export default function AttendancePage() {
   const [savingAttendance, setSavingAttendance] = React.useState(false)
 
   // Form states
+  const selectedTeacher = getLocalStorageValue("id")
   const [selectedCourse, setSelectedCourse] = React.useState("")
-  const [selectedTeacher, setSelectedTeacher] = React.useState("")
+  // const [selectedTeacher, setSelectedTeacher] = React.useState("")
   const [selectedSection, setSelectedSection] = React.useState("")
   const [roomNumber, setRoomNumber] = React.useState("")
   const [selectedDate, setSelectedDate] = React.useState("")
@@ -217,7 +219,7 @@ export default function AttendancePage() {
       }
 
       setAttendanceData(mockAttendanceData)
-    } catch (err) {
+    } catch (err:any) {
       setError("Failed to load students data")
       console.error("Error fetching students data:", err)
       setCreatingAttendance(false)
@@ -350,21 +352,7 @@ export default function AttendancePage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="teacher-select">Teacher</Label>
-              <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
-                <SelectTrigger id="teacher-select">
-                  <SelectValue placeholder="Select a teacher" />
-                </SelectTrigger>
-                <SelectContent>
-                  {teachers.map((teacher) => (
-                    <SelectItem key={teacher._id} value={teacher._id}>
-                      {`${teacher.firstName} ${teacher.lastName}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="section-select">Section</Label>
               <Select value={selectedSection} onValueChange={setSelectedSection}>
@@ -661,7 +649,12 @@ export default function AttendancePage() {
                       } else {
                         throw new Error("Failed to save attendance")
                       }
-                    } catch (error) {
+                    } catch (error:any) {
+                      console.log('ccatch',error)
+                      if(error.response.data.status == 409){
+                        toast.info(error.response.data.message)
+                        return
+                      }
                       console.error("Error saving attendance:", error)
                       toast.error("Failed to save attendance. Please try again.")
                     } finally {

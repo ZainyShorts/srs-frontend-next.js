@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "react-toastify" 
 import { activities } from "@/lib/activities"
 import { WeightageModal } from "./weightage-modal"
+import {  getLocalStorageValue } from "@/lib/utils"
 
 const studentsData = [
   { name: "Alice Johnson", id: "10A001", quiz1: 85, midterm: 78, project: 92, final: 88 },
@@ -25,6 +26,7 @@ export default function GradesPage() {
   const [selectedClass, setSelectedClass] = React.useState("")
   const [grades, setGrades] = React.useState(studentsData)
   const [showTable, setShowTable] = React.useState(false)
+  const selectedTeacher = getLocalStorageValue("id")
 
   // New state variables
   const [loading, setLoading] = React.useState(true)
@@ -61,7 +63,7 @@ export default function GradesPage() {
     "Z",
   ])
 
-  const [selectedTeacher, setSelectedTeacher] = React.useState("")
+  // const [selectedTeacher, setSelectedTeacher] = React.useState("")
   const [selectedSection, setSelectedSection] = React.useState("")
   const [roomNumber, setRoomNumber] = React.useState("")
   const [selectedCourse, setSelectedCourse] = React.useState("")
@@ -141,7 +143,7 @@ export default function GradesPage() {
   }
 
   const handleLoadGrading = async () => {
-    if (!selectedTeacher || !selectedSection || !roomNumber || !selectedCourse) {
+    if (!selectedSection || !roomNumber || !selectedCourse) {
       setError("Please fill in all fields")
       return
     }
@@ -209,7 +211,7 @@ export default function GradesPage() {
   }
 
   const handleCreateGrading = async () => {
-    if (!selectedTeacher || !selectedSection || !roomNumber || !selectedCourse) {
+    if ( !selectedSection || !roomNumber || !selectedCourse) {
       setError("Please fill in all fields")
       return
     }
@@ -451,7 +453,7 @@ export default function GradesPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label htmlFor="teacher-select">Teacher</Label>
                   <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
                     <SelectTrigger id="teacher-select">
@@ -465,7 +467,7 @@ export default function GradesPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
+                </div> */}
                 <div className="space-y-2">
                   <Label htmlFor="course-select">Course</Label>
                   <Select value={selectedCourse} onValueChange={setSelectedCourse}>

@@ -44,11 +44,11 @@ const TeacherSidebar = ({isSidebarOpen, setIsSidebarOpen}:{isSidebarOpen:boolean
       href: "/teacher/activities",
       icon: Plus,
     },
-    {
-      name: "Make Report",
-      href: "/teacher/make-report",
-      icon: FileText,
-    }, 
+    // {
+    //   name: "Make Report",
+    //   href: "/teacher/make-report",
+    //   icon: FileText,
+    // }, 
     {
         name: "Communication with Students",
         href: "/teacher/communication",

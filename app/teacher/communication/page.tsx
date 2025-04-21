@@ -3,6 +3,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Chatbot from "./chatbot/chatbot"
+import { getLocalStorageValue, getTokenFromCookie } from "@/lib/utils"
 
 interface Course {
   _id: string
@@ -26,14 +27,20 @@ export default function CommunicationPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const teacherId = "67e2c4282c90062ca640181f"
+  const teacherId = getLocalStorageValue("id")
 
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         setIsLoading(true)
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SRS_SERVER}/schedule?teacherId=${teacherId}&courseId=true`,
+          `${process.env.NEXT_PUBLIC_SRS_SERVER}/schedule?teacherId=${teacherId}&courseId=true`,{
+            method: 'GET', // or 'POST', depending on your use case
+            headers: {
+              'Content-Type': 'application/json',  // Ensure this header is set if sending JSON
+              'Authorization': `Bearer ${getTokenFromCookie()}`, // For authorization token
+            }
+          }
         )
 
         if (!response.ok) {
