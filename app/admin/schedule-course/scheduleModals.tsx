@@ -939,7 +939,7 @@ export function ScheduleModal({
                 </Label>
                 <input
                   id="className"
-                  type="number"
+                  type="text"
                   placeholder="Enter room number"
                   className={`w-full px-3 py-2 border rounded-md ${
                     errors.className ? "border-red-500" : "border-gray-300"

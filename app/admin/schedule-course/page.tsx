@@ -1059,9 +1059,7 @@ export default function ScheduleCoursePage() {
             </Label>
             <Input
               id="filterClass"
-              type="number"
-              min="1"
-              max="12"
+              type="text"
               placeholder="Enter Room number"
               value={inputClassValue}
               onChange={(e) => setInputClassValue(e.target.value)}
