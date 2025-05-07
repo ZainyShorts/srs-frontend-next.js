@@ -14,6 +14,15 @@ import { Input } from "@/components/ui/input"
 import axios from "axios"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
+import { uploadImageToAWS, deleteFromAWS } from "@/lib/awsUpload" // Adjust the import path as needed
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 // Define the course outline type based on the API response
 interface CourseOutline {
@@ -25,6 +34,7 @@ interface CourseOutline {
   createdAt: string
   updatedAt: string
   __v: number
+  awsKey?: string
 }
 
 export default function CourseOutlineUpload() {
@@ -39,6 +49,9 @@ export default function CourseOutlineUpload() {
   const [courseOutlines, setCourseOutlines] = useState<CourseOutline[]>([])
   const [isLoadingOutlines, setIsLoadingOutlines] = useState(true)
   const [documentUrl, setDocumentUrl] = useState("")
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [outlineToDelete, setOutlineToDelete] = useState<{ id: string; awsKey: string } | null>(null)
 
   // Static teacherId as specified
   const teacherId = "680613ecbd96ebb2ca9eecf3"
@@ -120,9 +133,7 @@ export default function CourseOutlineUpload() {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFile = e.target.files[0]
       setFile(selectedFile)
-      // In a real application, you would upload the file to a storage service here
-      // and get back a URL to use for the document field
-      setDocumentUrl("http-docurl") // Placeholder - replace with actual upload logic
+      // We'll upload to AWS when the form is submitted, not immediately on file selection
     }
   }
 
@@ -135,14 +146,20 @@ export default function CourseOutlineUpload() {
     }
 
     setIsLoading(true)
+    setUploadProgress(0)
 
     try {
-      // Create the payload for the API - now just using the course name
+      // Upload file to AWS S3
+      const awsUploadResult = await uploadImageToAWS(file, setUploadProgress)
+
+      // Create the payload for the API with the AWS URL
       const payload = {
         teacherId,
-        document: documentUrl, // In a real app, this would be the URL from your file upload
+        document: awsUploadResult.awsUrl, // Use the AWS URL from the upload result
         courseName: selectedCourse,
+        awsKey: awsUploadResult.key, // Store the AWS key for potential deletion later
       }
+
       await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course-outline`, payload)
 
       toast.success("Course outline uploaded successfully")
@@ -150,16 +167,16 @@ export default function CourseOutlineUpload() {
 
       fetchCourseOutlines()
     } catch (error) {
-      console.error("Error uploading course outline:", error);
-    
+      console.error("Error uploading course outline:", error)
+
       if (error.response?.data?.statusCode === 409) {
-        toast.error(error.response.data.message);
+        toast.error(error.response.data.message)
       } else {
-        toast.error("Failed to upload course outline");
+        toast.error("Failed to upload course outline")
       }
-    }
-     finally {
+    } finally {
       setIsLoading(false)
+      setUploadProgress(0)
     }
   }
 
@@ -204,9 +221,32 @@ export default function CourseOutlineUpload() {
     })
   }
 
+  const handleDeleteOutline = async (outlineId: string, awsKey: string) => {
+    setOutlineToDelete({ id: outlineId, awsKey })
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!outlineToDelete) return
+
+    try {
+      await deleteFromAWS(outlineToDelete.awsKey)
+      await axios.delete(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course-outline/${outlineToDelete.id}`)
+
+      toast.success("Course outline deleted successfully")
+      fetchCourseOutlines()
+    } catch (error) {
+      console.error("Error deleting course outline:", error)
+      toast.error("Failed to delete course outline")
+    } finally {
+      setDeleteDialogOpen(false)
+      setOutlineToDelete(null)
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl">
-      <ToastContainer position="top-right" autoClose={3000} />
+      {/* <ToastContainer position="top-right" autoClose={3000} /> */}
 
       <div className="text-center mb-10">
         <h1 className="text-3xl font-bold tracking-tight mb-2">Course Outline Management</h1>
@@ -288,6 +328,14 @@ export default function CourseOutlineUpload() {
                       )}
                     </div>
                   </div>
+                  {uploadProgress > 0 && uploadProgress < 100 && (
+                    <div className="mt-4">
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div className="bg-black h-2.5 rounded-full" style={{ width: `${uploadProgress}%` }}></div>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1 text-center">{uploadProgress}% Uploaded</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-8">
@@ -299,7 +347,7 @@ export default function CourseOutlineUpload() {
                     {isLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Uploading...
+                        {uploadProgress > 0 ? `Uploading... ${uploadProgress}%` : "Processing..."}
                       </>
                     ) : (
                       "Upload Course Outline"
@@ -412,6 +460,33 @@ export default function CourseOutlineUpload() {
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteOutline(outline._id, outline.awsKey || "")
+                              }}
+                            >
+                              <span className="sr-only">Delete</span>
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="h-4 w-4"
+                              >
+                                <path d="M3 6h18"></path>
+                                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"></path>
+                                <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                              </svg>
+                            </Button>
                             {getStatusBadge(outline.status)}
                             <Button
                               variant="ghost"
@@ -480,6 +555,33 @@ export default function CourseOutlineUpload() {
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteOutline(outline._id, outline.awsKey || "")
+                                }}
+                              >
+                                <span className="sr-only">Delete</span>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="h-4 w-4"
+                                >
+                                  <path d="M3 6h18"></path>
+                                  <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"></path>
+                                  <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+                                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                              </Button>
                               {getStatusBadge(outline.status)}
                               <Button
                                 variant="ghost"
@@ -543,6 +645,33 @@ export default function CourseOutlineUpload() {
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteOutline(outline._id, outline.awsKey || "")
+                                }}
+                              >
+                                <span className="sr-only">Delete</span>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="h-4 w-4"
+                                >
+                                  <path d="M3 6h18"></path>
+                                  <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"></path>
+                                  <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+                                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                              </Button>
                               {getStatusBadge(outline.status)}
                               <Button
                                 variant="ghost"
@@ -611,6 +740,33 @@ export default function CourseOutlineUpload() {
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteOutline(outline._id, outline.awsKey || "")
+                                }}
+                              >
+                                <span className="sr-only">Delete</span>
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="h-4 w-4"
+                                >
+                                  <path d="M3 6h18"></path>
+                                  <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"></path>
+                                  <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+                                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                              </Button>
                               {getStatusBadge(outline.status)}
                               <Button
                                 variant="ghost"
@@ -678,6 +834,24 @@ export default function CourseOutlineUpload() {
           </Card>
         </div>
       </div>
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this course outline? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex space-x-2 justify-end">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
