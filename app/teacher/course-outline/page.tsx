@@ -13,7 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import axios from "axios"
 import { toast } from "react-toastify"
-import "react-toastify/dist/ReactToastify.css"
+import "react-toastify/dist/ReactToastify.css" 
+import { getLocalStorageValue, getTokenFromCookie } from "@/lib/utils"
 import { uploadImageToAWS, deleteFromAWS } from "@/lib/awsUpload" // Adjust the import path as needed
 import {
   Dialog,
@@ -44,7 +45,8 @@ export default function CourseOutlineUpload() {
   const [isUploaded, setIsUploaded] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState("")
-  const [courses, setCourses] = useState<any[]>([])
+  const [courses, setCourses] = useState<any[]>([]) 
+    const teacherId = getLocalStorageValue("id")
   const [isLoadingCourses, setIsLoadingCourses] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [courseOutlines, setCourseOutlines] = useState<CourseOutline[]>([])
@@ -56,7 +58,7 @@ export default function CourseOutlineUpload() {
   const [notes, setNotes] = useState("")
 
   // Static teacherId as specified
-  const teacherId = "68061478bd96ebb2ca9eed46"
+  // const teacherId = "68061478bd96ebb2ca9eed46"
 
   // Sample courses for the dropdown
   // const courses = [
@@ -160,7 +162,7 @@ export default function CourseOutlineUpload() {
         document: awsUploadResult.awsUrl, // Use the AWS URL from the upload result
         courseName: selectedCourse,
         awsKey: awsUploadResult.key, 
-        // notes: notes, 
+        notes: notes, 
       } 
       console.log('payload',payload)
 
@@ -235,7 +237,7 @@ export default function CourseOutlineUpload() {
     if (!outlineToDelete) return
 
     try {
-      await deleteFromAWS(outlineToDelete.awsKey)
+      // await deleteFromAWS(outlineToDelete.awsKey)
       await axios.delete(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course-outline/${outlineToDelete.id}`)
 
       toast.success("Lesson Plan deleted successfully")
