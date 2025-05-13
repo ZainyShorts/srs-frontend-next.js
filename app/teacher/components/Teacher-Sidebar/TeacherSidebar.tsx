@@ -40,7 +40,7 @@ const TeacherSidebar = ({isSidebarOpen, setIsSidebarOpen}:{isSidebarOpen:boolean
       icon: Plus,
     },  
     {
-      name: "Upload Course Outline",
+      name: "Upload Lesson Plan",
       href: "/teacher/course-outline",
       icon: Plus,
     }, 

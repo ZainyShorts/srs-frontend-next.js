@@ -12,7 +12,7 @@ import axios from "axios"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 
-// Define the course outline type based on the API response
+// Define the Lesson Plan type based on the API response
 interface CourseOutline {
   _id: string
   teacherId: string
@@ -24,9 +24,13 @@ interface CourseOutline {
   __v: number
   isStatusChanged?: boolean
   originalStatus?: string
+  teacher?: {
+    firstName: string
+    lastName: string
+  }
 }
 
-// Course outline status enum
+// Lesson Plan status enum
 enum CourseOutlineStatus {
   Pending = "Pending",
   Rejected = "Rejected",
@@ -43,7 +47,7 @@ export default function CourseOutlineAdmin() {
   const [hasChanges, setHasChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
-  // Fetch course outlines and courses on component mount
+  // Fetch Lesson Plans and courses on component mount
   useEffect(() => {
     fetchCourseOutlines()
     fetchCourses()
@@ -53,7 +57,7 @@ export default function CourseOutlineAdmin() {
   const fetchCourses = async () => {
     setIsLoadingCourses(true)
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course`)
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course?active=true`)
       setCourses(response.data)
     } catch (error) {
       console.error("Error fetching courses:", error)
@@ -63,7 +67,18 @@ export default function CourseOutlineAdmin() {
     }
   }
 
-  // Function to fetch course outlines from the API
+  // Function to fetch teacher data
+  const fetchTeacherData = async (teacherId: string) => {
+    try {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers/${teacherId}`)
+      return response.data 
+    } catch (error) {
+      console.error(`Error fetching teacher with ID ${teacherId}:`, error)
+      return null
+    }
+  }
+
+  // Function to fetch Lesson Plans from the API
   const fetchCourseOutlines = async () => {
     setIsLoadingOutlines(true)
     try {
@@ -76,16 +91,31 @@ export default function CourseOutlineAdmin() {
         isStatusChanged: false,
       }))
 
-      setCourseOutlines(outlines)
+
+      // Fetch teacher data for each outline
+      const outlinesWithTeachers = await Promise.all(
+        outlines.map(async (outline: CourseOutline) => {
+          if (outline.teacherId) {
+            const teacherData = await fetchTeacherData(outline.teacherId)
+            return {
+              ...outline,
+              teacher: teacherData,
+            }
+          }
+          return outline
+        }),
+      )
+
+      setCourseOutlines(outlinesWithTeachers)
     } catch (error) {
-      console.error("Error fetching course outlines:", error)
-      toast.error("Failed to load course outlines")
+      console.error("Error fetching Lesson Plans:", error)
+      toast.error("Failed to load Lesson Plans")
     } finally {
       setIsLoadingOutlines(false)
     }
   }
 
-  // Handle status change for a course outline
+  // Handle status change for a Lesson Plan
   const handleStatusChange = (outlineId: string, newStatus: string) => {
     setCourseOutlines((prevOutlines) =>
       prevOutlines.map((outline) => {
@@ -135,7 +165,7 @@ export default function CourseOutlineAdmin() {
       )
 
       setHasChanges(false)
-      toast.success(`Successfully updated ${changedOutlines.length} course outline(s)`)
+      toast.success(`Successfully updated ${changedOutlines.length} Lesson Plan(s)`)
     } catch (error) {
       console.error("Error saving changes:", error)
       toast.error("Failed to save changes")
@@ -183,8 +213,8 @@ export default function CourseOutlineAdmin() {
 
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Course Outline Administration</h1>
-          <p className="text-gray-600">Review and manage course outlines submitted by teachers</p>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">Lesson Plan Administration</h1>
+          <p className="text-gray-600">Review and manage Lesson Plans submitted by teachers</p>
         </div>
 
         {hasChanges && (
@@ -208,8 +238,8 @@ export default function CourseOutlineAdmin() {
         <CardHeader className="border-b border-gray-100 bg-gray-50">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <CardTitle className="text-xl font-semibold">All Course Outlines</CardTitle>
-              <CardDescription>Review and update status of submitted course outlines</CardDescription>
+              <CardTitle className="text-xl font-semibold">All Lesson Plans</CardTitle>
+              <CardDescription>Review and update status of submitted Lesson Plans</CardDescription>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -281,7 +311,7 @@ export default function CourseOutlineAdmin() {
                 {isLoadingOutlines ? (
                   <div className="py-12 text-center">
                     <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-gray-500" />
-                    <p className="text-gray-500">Loading course outlines...</p>
+                    <p className="text-gray-500">Loading Lesson Plans...</p>
                   </div>
                 ) : filteredOutlines.length > 0 ? (
                   <div className="overflow-x-auto">
@@ -289,7 +319,7 @@ export default function CourseOutlineAdmin() {
                       <thead>
                         <tr className="bg-gray-50">
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Course</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Teacher ID</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Teacher Name</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Uploaded</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Updated</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
@@ -307,7 +337,9 @@ export default function CourseOutlineAdmin() {
                             <td className="px-4 py-4 text-sm">
                               <div className="font-medium text-gray-900">{outline.courseName}</div>
                             </td>
-                            <td className="px-4 py-4 text-sm text-gray-500">{outline.teacherId}</td>
+                            <td className="px-4 py-4 text-sm text-gray-500">
+                             {outline.teacher?.firstName} {outline.teacher?.lastName}
+                            </td>
                             <td className="px-4 py-4 text-sm text-gray-500">{formatDate(outline.createdAt)}</td>
                             <td className="px-4 py-4 text-sm text-gray-500">{formatDate(outline.updatedAt)}</td>
                             <td className="px-4 py-4 text-sm">
@@ -349,7 +381,7 @@ export default function CourseOutlineAdmin() {
                   </div>
                 ) : (
                   <div className="py-12 text-center">
-                    <p className="text-gray-500">No course outlines found</p>
+                    <p className="text-gray-500">No Lesson Plans found</p>
                   </div>
                 )}
               </div>
@@ -360,7 +392,7 @@ export default function CourseOutlineAdmin() {
                 {isLoadingOutlines ? (
                   <div className="py-12 text-center">
                     <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-gray-500" />
-                    <p className="text-gray-500">Loading course outlines...</p>
+                    <p className="text-gray-500">Loading Lesson Plans...</p>
                   </div>
                 ) : filteredOutlines.filter((o) => o.status.toLowerCase() === "approved").length > 0 ? (
                   <div className="overflow-x-auto">
@@ -368,7 +400,7 @@ export default function CourseOutlineAdmin() {
                       <thead>
                         <tr className="bg-gray-50">
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Course</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Teacher ID</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Teacher Name</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Uploaded</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Updated</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
@@ -388,7 +420,11 @@ export default function CourseOutlineAdmin() {
                               <td className="px-4 py-4 text-sm">
                                 <div className="font-medium text-gray-900">{outline.courseName}</div>
                               </td>
-                              <td className="px-4 py-4 text-sm text-gray-500">{outline.teacherId}</td>
+                              <td className="px-4 py-4 text-sm text-gray-500">
+                                {outline.teacher
+                                  ? `${outline.teacher.firstName} ${outline.teacher.lastName}`
+                                  : outline.teacherId}
+                              </td>
                               <td className="px-4 py-4 text-sm text-gray-500">{formatDate(outline.createdAt)}</td>
                               <td className="px-4 py-4 text-sm text-gray-500">{formatDate(outline.updatedAt)}</td>
                               <td className="px-4 py-4 text-sm">
@@ -433,7 +469,7 @@ export default function CourseOutlineAdmin() {
                   </div>
                 ) : (
                   <div className="py-12 text-center">
-                    <p className="text-gray-500">No approved course outlines found</p>
+                    <p className="text-gray-500">No approved Lesson Plans found</p>
                   </div>
                 )}
               </div>
@@ -444,7 +480,7 @@ export default function CourseOutlineAdmin() {
                 {isLoadingOutlines ? (
                   <div className="py-12 text-center">
                     <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-gray-500" />
-                    <p className="text-gray-500">Loading course outlines...</p>
+                    <p className="text-gray-500">Loading Lesson Plans...</p>
                   </div>
                 ) : filteredOutlines.filter((o) => o.status.toLowerCase() === "pending").length > 0 ? (
                   <div className="overflow-x-auto">
@@ -452,7 +488,7 @@ export default function CourseOutlineAdmin() {
                       <thead>
                         <tr className="bg-gray-50">
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Course</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Teacher ID</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Teacher Name</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Uploaded</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Updated</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
@@ -472,7 +508,11 @@ export default function CourseOutlineAdmin() {
                               <td className="px-4 py-4 text-sm">
                                 <div className="font-medium text-gray-900">{outline.courseName}</div>
                               </td>
-                              <td className="px-4 py-4 text-sm text-gray-500">{outline.teacherId}</td>
+                              <td className="px-4 py-4 text-sm text-gray-500">
+                                {outline.teacher
+                                  ? `${outline.teacher.firstName} ${outline.teacher.lastName}`
+                                  : outline.teacherId}
+                              </td>
                               <td className="px-4 py-4 text-sm text-gray-500">{formatDate(outline.createdAt)}</td>
                               <td className="px-4 py-4 text-sm text-gray-500">{formatDate(outline.updatedAt)}</td>
                               <td className="px-4 py-4 text-sm">
@@ -517,7 +557,7 @@ export default function CourseOutlineAdmin() {
                   </div>
                 ) : (
                   <div className="py-12 text-center">
-                    <p className="text-gray-500">No pending course outlines found</p>
+                    <p className="text-gray-500">No pending Lesson Plans found</p>
                   </div>
                 )}
               </div>
@@ -528,7 +568,7 @@ export default function CourseOutlineAdmin() {
                 {isLoadingOutlines ? (
                   <div className="py-12 text-center">
                     <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-gray-500" />
-                    <p className="text-gray-500">Loading course outlines...</p>
+                    <p className="text-gray-500">Loading Lesson Plans...</p>
                   </div>
                 ) : filteredOutlines.filter((o) => o.status.toLowerCase() === "rejected").length > 0 ? (
                   <div className="overflow-x-auto">
@@ -536,7 +576,7 @@ export default function CourseOutlineAdmin() {
                       <thead>
                         <tr className="bg-gray-50">
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Course</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Teacher ID</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Teacher Name</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Uploaded</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Updated</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
@@ -556,7 +596,11 @@ export default function CourseOutlineAdmin() {
                               <td className="px-4 py-4 text-sm">
                                 <div className="font-medium text-gray-900">{outline.courseName}</div>
                               </td>
-                              <td className="px-4 py-4 text-sm text-gray-500">{outline.teacherId}</td>
+                              <td className="px-4 py-4 text-sm text-gray-500">
+                                {outline.teacher
+                                  ? `${outline.teacher.firstName} ${outline.teacher.lastName}`
+                                  : outline.teacherId}
+                              </td>
                               <td className="px-4 py-4 text-sm text-gray-500">{formatDate(outline.createdAt)}</td>
                               <td className="px-4 py-4 text-sm text-gray-500">{formatDate(outline.updatedAt)}</td>
                               <td className="px-4 py-4 text-sm">
@@ -601,7 +645,7 @@ export default function CourseOutlineAdmin() {
                   </div>
                 ) : (
                   <div className="py-12 text-center">
-                    <p className="text-gray-500">No rejected course outlines found</p>
+                    <p className="text-gray-500">No rejected Lesson Plans found</p>
                   </div>
                 )}
               </div>

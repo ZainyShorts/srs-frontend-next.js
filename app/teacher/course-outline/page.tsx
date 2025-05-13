@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import axios from "axios"
-import { toast, ToastContainer } from "react-toastify"
+import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { uploadImageToAWS, deleteFromAWS } from "@/lib/awsUpload" // Adjust the import path as needed
 import {
@@ -24,7 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
-// Define the course outline type based on the API response
+// Define the Lesson Plan type based on the API response
 interface CourseOutline {
   _id: string
   teacherId: string
@@ -35,6 +35,7 @@ interface CourseOutline {
   updatedAt: string
   __v: number
   awsKey?: string
+  notes?: string
 }
 
 export default function CourseOutlineUpload() {
@@ -52,9 +53,10 @@ export default function CourseOutlineUpload() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [outlineToDelete, setOutlineToDelete] = useState<{ id: string; awsKey: string } | null>(null)
+  const [notes, setNotes] = useState("")
 
   // Static teacherId as specified
-  const teacherId = "680613ecbd96ebb2ca9eecf3"
+  const teacherId = "68061478bd96ebb2ca9eed46"
 
   // Sample courses for the dropdown
   // const courses = [
@@ -67,7 +69,7 @@ export default function CourseOutlineUpload() {
   //   { id: "Science", name: "Science" },
   // ]
 
-  // Fetch course outlines on component mount
+  // Fetch Lesson Plans on component mount
   useEffect(() => {
     fetchCourseOutlines()
     fetchCourses()
@@ -77,7 +79,7 @@ export default function CourseOutlineUpload() {
   const fetchCourses = async () => {
     setIsLoadingCourses(true)
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course`)
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course?teacherId=${teacherId}`)
       setCourses(response.data)
     } catch (error) {
       console.error("Error fetching courses:", error)
@@ -92,11 +94,12 @@ export default function CourseOutlineUpload() {
     try {
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_SRS_SERVER}/course-outline/teacher?teacherId=${teacherId}`,
-      )
+      ) 
+      console.log('fetchCourseoutline',response)
       setCourseOutlines(response.data)
     } catch (error) {
-      console.error("Error fetching course outlines:", error)
-      toast.error("Failed to load course outlines")
+      console.error("Error fetching Lesson Plans:", error)
+      toast.error("Failed to load Lesson Plans")
     } finally {
       setIsLoadingOutlines(false)
     }
@@ -152,27 +155,28 @@ export default function CourseOutlineUpload() {
       // Upload file to AWS S3
       const awsUploadResult = await uploadImageToAWS(file, setUploadProgress)
 
-      // Create the payload for the API with the AWS URL
       const payload = {
         teacherId,
         document: awsUploadResult.awsUrl, // Use the AWS URL from the upload result
         courseName: selectedCourse,
-        awsKey: awsUploadResult.key, // Store the AWS key for potential deletion later
-      }
+        awsKey: awsUploadResult.key, 
+        // notes: notes, 
+      } 
+      console.log('payload',payload)
 
       await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course-outline`, payload)
 
-      toast.success("Course outline uploaded successfully")
+      toast.success("Lesson Plan uploaded successfully")
       setIsUploaded(true)
 
       fetchCourseOutlines()
     } catch (error) {
-      console.error("Error uploading course outline:", error)
+      console.error("Error uploading Lesson Plan:", error)
 
       if (error.response?.data?.statusCode === 409) {
         toast.error(error.response.data.message)
       } else {
-        toast.error("Failed to upload course outline")
+        toast.error("Failed to upload Lesson Plan")
       }
     } finally {
       setIsLoading(false)
@@ -185,6 +189,7 @@ export default function CourseOutlineUpload() {
     setIsUploaded(false)
     setSelectedCourse("")
     setDocumentUrl("")
+    setNotes("")
   }
 
   const getStatusBadge = (status: string) => {
@@ -233,11 +238,11 @@ export default function CourseOutlineUpload() {
       await deleteFromAWS(outlineToDelete.awsKey)
       await axios.delete(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course-outline/${outlineToDelete.id}`)
 
-      toast.success("Course outline deleted successfully")
+      toast.success("Lesson Plan deleted successfully")
       fetchCourseOutlines()
     } catch (error) {
-      console.error("Error deleting course outline:", error)
-      toast.error("Failed to delete course outline")
+      console.error("Error deleting Lesson Plan:", error)
+      toast.error("Failed to delete Lesson Plan")
     } finally {
       setDeleteDialogOpen(false)
       setOutlineToDelete(null)
@@ -249,17 +254,17 @@ export default function CourseOutlineUpload() {
       {/* <ToastContainer position="top-right" autoClose={3000} /> */}
 
       <div className="text-center mb-10">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">Course Outline Management</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-2">Lesson Plan Management</h1>
         <p className="text-gray-600 max-w-2xl mx-auto">
-          Upload and manage your course outlines efficiently with our intuitive interface
+          Upload and manage your lesson plans efficiently with our intuitive interface
         </p>
       </div>
 
       <div className="grid gap-8 md:grid-cols-[1fr_1.5fr]">
         <Card className="border border-gray-200 shadow-sm h-fit">
           <CardHeader className="border-b border-gray-100 bg-gray-50">
-            <CardTitle className="text-xl font-semibold">Upload Course Outline</CardTitle>
-            <CardDescription>Select a course and upload the corresponding outline document</CardDescription>
+            <CardTitle className="text-xl font-semibold">Upload Lesson Plan</CardTitle>
+            <CardDescription>Select a Lesson and upload the corresponding Plan document</CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
             {!isUploaded ? (
@@ -291,7 +296,7 @@ export default function CourseOutlineUpload() {
 
                   <div className="space-y-2">
                     <Label htmlFor="file-upload" className="text-sm font-medium">
-                      Course Outline Document
+                      Lessan Plan Document
                     </Label>
                     <div
                       className={`border-2 border-dashed rounded-lg p-8 text-center ${
@@ -328,6 +333,18 @@ export default function CourseOutlineUpload() {
                       )}
                     </div>
                   </div>
+                  <div className="space-y-2 mt-4">
+                    <Label htmlFor="notes" className="text-sm font-medium">
+                      Notes (Optional)
+                    </Label>
+                    <textarea
+                      id="notes"
+                      className="w-full min-h-[100px] p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                      placeholder="Add any additional notes about this lesson plan..."
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                    />
+                  </div>
                   {uploadProgress > 0 && uploadProgress < 100 && (
                     <div className="mt-4">
                       <div className="w-full bg-gray-200 rounded-full h-2.5">
@@ -350,7 +367,7 @@ export default function CourseOutlineUpload() {
                         {uploadProgress > 0 ? `Uploading... ${uploadProgress}%` : "Processing..."}
                       </>
                     ) : (
-                      "Upload Course Outline"
+                      "Upload Lesson Plan"
                     )}
                   </Button>
                 </div>
@@ -362,7 +379,7 @@ export default function CourseOutlineUpload() {
                 </div>
                 <h3 className="text-xl font-medium">Upload Successful!</h3>
                 <p className="text-gray-600 max-w-md mx-auto">
-                  Your course outline for {selectedCourse} has been uploaded successfully and is pending review.
+                  Your Lesson Plan for {selectedCourse} has been uploaded successfully and is pending review.
                 </p>
               </div>
             )}
@@ -385,8 +402,8 @@ export default function CourseOutlineUpload() {
             <CardHeader className="border-b border-gray-100 bg-gray-50">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-xl font-semibold">Your Course Outlines</CardTitle>
-                  <CardDescription>View and manage your uploaded course outlines</CardDescription>
+                  <CardTitle className="text-xl font-semibold">Your Lesson Plans</CardTitle>
+                  <CardDescription>View and manage your uploaded Lesson Plans</CardDescription>
                 </div>
                 <div className="relative w-64">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
@@ -435,7 +452,7 @@ export default function CourseOutlineUpload() {
                     {isLoadingOutlines ? (
                       <div className="py-12 text-center">
                         <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-gray-500" />
-                        <p className="text-gray-500">Loading course outlines...</p>
+                        <p className="text-gray-500">Loading Lesson Plans...</p>
                       </div>
                     ) : filteredOutlines.length > 0 ? (
                       filteredOutlines.map((outline) => (
@@ -515,7 +532,7 @@ export default function CourseOutlineUpload() {
                       ))
                     ) : (
                       <div className="py-12 text-center">
-                        <p className="text-gray-500">No course outlines found</p>
+                        <p className="text-gray-500">No Lesson Plans found</p>
                       </div>
                     )}
                   </div>
@@ -526,7 +543,7 @@ export default function CourseOutlineUpload() {
                     {isLoadingOutlines ? (
                       <div className="py-12 text-center">
                         <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-gray-500" />
-                        <p className="text-gray-500">Loading course outlines...</p>
+                        <p className="text-gray-500">Loading Lesson Plans...</p>
                       </div>
                     ) : filteredOutlines.filter((o) => o.status.toLowerCase() === "approved").length > 0 ? (
                       filteredOutlines
@@ -610,7 +627,7 @@ export default function CourseOutlineUpload() {
                         ))
                     ) : (
                       <div className="py-12 text-center">
-                        <p className="text-gray-500">No approved course outlines found</p>
+                        <p className="text-gray-500">No approved Lesson Plans found</p>
                       </div>
                     )}
                   </div>
@@ -621,7 +638,7 @@ export default function CourseOutlineUpload() {
                     {isLoadingOutlines ? (
                       <div className="py-12 text-center">
                         <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-gray-500" />
-                        <p className="text-gray-500">Loading course outlines...</p>
+                        <p className="text-gray-500">Loading Lesson Plans...</p>
                       </div>
                     ) : filteredOutlines.filter((o) => o.status.toLowerCase() === "pending").length > 0 ? (
                       filteredOutlines
@@ -700,7 +717,7 @@ export default function CourseOutlineUpload() {
                         ))
                     ) : (
                       <div className="py-12 text-center">
-                        <p className="text-gray-500">No pending course outlines found</p>
+                        <p className="text-gray-500">No pending Lesson Plans found</p>
                       </div>
                     )}
                   </div>
@@ -711,7 +728,7 @@ export default function CourseOutlineUpload() {
                     {isLoadingOutlines ? (
                       <div className="py-12 text-center">
                         <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2 text-gray-500" />
-                        <p className="text-gray-500">Loading course outlines...</p>
+                        <p className="text-gray-500">Loading Lesson Plans...</p>
                       </div>
                     ) : filteredOutlines.filter((o) => o.status.toLowerCase() === "rejected").length > 0 ? (
                       filteredOutlines
@@ -795,7 +812,7 @@ export default function CourseOutlineUpload() {
                         ))
                     ) : (
                       <div className="py-12 text-center">
-                        <p className="text-gray-500">No rejected course outlines found</p>
+                        <p className="text-gray-500">No rejected Lesson Plans found</p>
                       </div>
                     )}
                   </div>
@@ -807,7 +824,7 @@ export default function CourseOutlineUpload() {
           <Card className="border border-gray-200 shadow-sm">
             <CardHeader className="border-b border-gray-100 bg-gray-50">
               <CardTitle className="text-xl font-semibold">Status Overview</CardTitle>
-              <CardDescription>Summary of your course outline submissions</CardDescription>
+              <CardDescription>Summary of your Lesson Plan submissions</CardDescription>
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-3 gap-4">
@@ -839,7 +856,7 @@ export default function CourseOutlineUpload() {
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this course outline? This action cannot be undone.
+              Are you sure you want to delete this Lesson Plan? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex space-x-2 justify-end">

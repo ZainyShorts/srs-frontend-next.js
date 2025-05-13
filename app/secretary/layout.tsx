@@ -5,7 +5,9 @@ import type React from "react"
 import { Calendar, FileText, LayoutDashboard, LogOut, Menu, Plus, School, UserPlus, X } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname } from "next/navigation" 
+import { ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 import { useState, useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -47,13 +49,23 @@ export default function AdminLayout({
       icon: LayoutDashboard,
     },
     {
-      name: "Time Table",
-      href: "/secretary/timetable",
+      name: "Lesson Plans",
+      href: "/secretary/course-outlines",
       icon: UserPlus,
     },
     {
-      name: "Assignments",
-      href: "/secretary/assignments",
+      name: "Departments",
+      href: "/secretary/departments",
+      icon: Plus,
+    }, 
+    {
+      name: "Add Course",
+      href: "/secretary/add-course",
+      icon: Plus,
+    }, 
+    {
+      name: "Attendance",
+      href: "/secretary/attendance",
       icon: Plus,
     },
   ]
@@ -187,7 +199,19 @@ export default function AdminLayout({
         </div>
 
         {/* Page Content */}
-        <main className="flex-1">{children}</main>
+        <main className="flex-1">{children}</main> 
+          <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                limit={1}
+              />
       </div>
     </div>
   )

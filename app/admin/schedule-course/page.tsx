@@ -853,7 +853,6 @@ export default function ScheduleCoursePage() {
     }
   }
 
-  // Fetch courses
   const fetchCourses = async () => {
     try {
       setIsCoursesLoading(true)
