@@ -11,6 +11,10 @@ import { Input } from "@/components/ui/input"
 import axios from "axios"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+
+// Add global styles for tooltip
+// import { useEffect } from "react" // Removed duplicate useEffect import
 
 // Define the Lesson Plan type based on the API response
 interface CourseOutline {
@@ -28,6 +32,7 @@ interface CourseOutline {
     firstName: string
     lastName: string
   }
+  notes?: string
 }
 
 // Lesson Plan status enum
@@ -46,6 +51,37 @@ export default function CourseOutlineAdmin() {
   const [selectedCourseFilter, setSelectedCourseFilter] = useState<string>("all")
   const [hasChanges, setHasChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Add global styles to ensure tooltips are visible
+  useEffect(() => {
+    const style = document.createElement("style")
+    style.innerHTML = `
+    [data-radix-popper-content-wrapper] {
+      z-index: 9999 !important;
+    }
+  `
+    document.head.appendChild(style)
+    return () => {
+      document.head.removeChild(style)
+    }
+  }, [])
+
+  // Add this function at the beginning of your component
+  useEffect(() => {
+    // Add a style tag to ensure tooltips appear above other elements
+    const style = document.createElement("style")
+    style.innerHTML = `
+    .tooltip-content {
+      z-index: 9999 !important;
+      pointer-events: auto !important;
+    }
+  `
+    document.head.appendChild(style)
+
+    return () => {
+      document.head.removeChild(style)
+    }
+  }, [])
 
   // Fetch Lesson Plans and courses on component mount
   useEffect(() => {
@@ -71,7 +107,7 @@ export default function CourseOutlineAdmin() {
   const fetchTeacherData = async (teacherId: string) => {
     try {
       const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers/${teacherId}`)
-      return response.data 
+      return response.data
     } catch (error) {
       console.error(`Error fetching teacher with ID ${teacherId}:`, error)
       return null
@@ -83,14 +119,20 @@ export default function CourseOutlineAdmin() {
     setIsLoadingOutlines(true)
     try {
       const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course-outline/admin`)
+      console.log(response)
 
       // Add tracking properties for status changes
-      const outlines = response.data.map((outline: CourseOutline) => ({
+      const outlines = response.data.map((outline: CourseOutline, index: number) => ({
         ...outline,
         originalStatus: outline.status,
         isStatusChanged: false,
+        // Add sample notes for testing if they don't exist
+        notes:
+          outline.notes ||
+          (index % 3 === 0
+            ? "This is a sample note for testing the tooltip functionality. It should appear when hovering over the Notes badge."
+            : ""),
       }))
-
 
       // Fetch teacher data for each outline
       const outlinesWithTeachers = await Promise.all(
@@ -323,6 +365,7 @@ export default function CourseOutlineAdmin() {
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Uploaded</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Updated</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Notes</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Actions</th>
                         </tr>
                       </thead>
@@ -338,7 +381,7 @@ export default function CourseOutlineAdmin() {
                               <div className="font-medium text-gray-900">{outline.courseName}</div>
                             </td>
                             <td className="px-4 py-4 text-sm text-gray-500">
-                             {outline.teacher?.firstName} {outline.teacher?.lastName}
+                              {outline.teacher?.firstName} {outline.teacher?.lastName}
                             </td>
                             <td className="px-4 py-4 text-sm text-gray-500">{formatDate(outline.createdAt)}</td>
                             <td className="px-4 py-4 text-sm text-gray-500">{formatDate(outline.updatedAt)}</td>
@@ -356,6 +399,26 @@ export default function CourseOutlineAdmin() {
                                   <SelectItem value={CourseOutlineStatus.Rejected}>Rejected</SelectItem>
                                 </SelectContent>
                               </Select>
+                            </td>
+                            <td className="px-4 py-4 text-sm">
+                              {outline.notes ? (
+                                <div className="relative inline-block">
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <span className="text-purple-600 underline cursor-pointer font-medium">
+                                          View Notes
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent className="bg-black text-white p-3 rounded-md shadow-lg max-w-xs z-[9999]">
+                                        {outline.notes}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 text-xs">No notes</span>
+                              )}
                             </td>
                             <td className="px-4 py-4 text-sm">
                               <div className="flex items-center space-x-2">
@@ -404,6 +467,7 @@ export default function CourseOutlineAdmin() {
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Uploaded</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Updated</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Notes</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Actions</th>
                         </tr>
                       </thead>
@@ -441,6 +505,26 @@ export default function CourseOutlineAdmin() {
                                     <SelectItem value={CourseOutlineStatus.Rejected}>Rejected</SelectItem>
                                   </SelectContent>
                                 </Select>
+                              </td>
+                              <td className="px-4 py-4 text-sm">
+                                {outline.notes ? (
+                                  <div className="relative inline-block">
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <span className="text-purple-600 underline cursor-pointer font-medium">
+                                            View Notes
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="bg-black text-white p-3 rounded-md shadow-lg max-w-xs z-[9999]">
+                                          {outline.notes}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400 text-xs">No notes</span>
+                                )}
                               </td>
                               <td className="px-4 py-4 text-sm">
                                 <div className="flex items-center space-x-2">
@@ -492,6 +576,7 @@ export default function CourseOutlineAdmin() {
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Uploaded</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Updated</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Notes</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Actions</th>
                         </tr>
                       </thead>
@@ -529,6 +614,26 @@ export default function CourseOutlineAdmin() {
                                     <SelectItem value={CourseOutlineStatus.Rejected}>Rejected</SelectItem>
                                   </SelectContent>
                                 </Select>
+                              </td>
+                              <td className="px-4 py-4 text-sm">
+                                {outline.notes ? (
+                                  <div className="relative inline-block">
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <span className="text-purple-600 underline cursor-pointer font-medium">
+                                            View Notes
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="bg-black text-white p-3 rounded-md shadow-lg max-w-xs z-[9999]">
+                                          {outline.notes}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400 text-xs">No notes</span>
+                                )}
                               </td>
                               <td className="px-4 py-4 text-sm">
                                 <div className="flex items-center space-x-2">
@@ -580,6 +685,7 @@ export default function CourseOutlineAdmin() {
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Uploaded</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Updated</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Notes</th>
                           <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Actions</th>
                         </tr>
                       </thead>
@@ -617,6 +723,26 @@ export default function CourseOutlineAdmin() {
                                     <SelectItem value={CourseOutlineStatus.Rejected}>Rejected</SelectItem>
                                   </SelectContent>
                                 </Select>
+                              </td>
+                              <td className="px-4 py-4 text-sm">
+                                {outline.notes ? (
+                                  <div className="relative inline-block">
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <span className="text-purple-600 underline cursor-pointer font-medium">
+                                            View Notes
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="bg-black text-white p-3 rounded-md shadow-lg max-w-xs z-[9999]">
+                                          {outline.notes}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-400 text-xs">No notes</span>
+                                )}
                               </td>
                               <td className="px-4 py-4 text-sm">
                                 <div className="flex items-center space-x-2">
