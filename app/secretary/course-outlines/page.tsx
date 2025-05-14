@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { FileText, Loader2, Search, Save, Filter } from "lucide-react"
+import { FileText, Loader2, Search, Save, Filter, StickyNote } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -11,10 +11,14 @@ import { Input } from "@/components/ui/input"
 import axios from "axios"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-
-// Add global styles for tooltip
-// import { useEffect } from "react" // Removed duplicate useEffect import
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog"
 
 // Define the Lesson Plan type based on the API response
 interface CourseOutline {
@@ -51,37 +55,7 @@ export default function CourseOutlineAdmin() {
   const [selectedCourseFilter, setSelectedCourseFilter] = useState<string>("all")
   const [hasChanges, setHasChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-
-  // Add global styles to ensure tooltips are visible
-  useEffect(() => {
-    const style = document.createElement("style")
-    style.innerHTML = `
-    [data-radix-popper-content-wrapper] {
-      z-index: 9999 !important;
-    }
-  `
-    document.head.appendChild(style)
-    return () => {
-      document.head.removeChild(style)
-    }
-  }, [])
-
-  // Add this function at the beginning of your component
-  useEffect(() => {
-    // Add a style tag to ensure tooltips appear above other elements
-    const style = document.createElement("style")
-    style.innerHTML = `
-    .tooltip-content {
-      z-index: 9999 !important;
-      pointer-events: auto !important;
-    }
-  `
-    document.head.appendChild(style)
-
-    return () => {
-      document.head.removeChild(style)
-    }
-  }, [])
+  const [openNoteId, setOpenNoteId] = useState<string | null>(null)
 
   // Fetch Lesson Plans and courses on component mount
   useEffect(() => {
@@ -130,7 +104,7 @@ export default function CourseOutlineAdmin() {
         notes:
           outline.notes ||
           (index % 3 === 0
-            ? "This is a sample note for testing the tooltip functionality. It should appear when hovering over the Notes badge."
+            ? "This is a sample note for testing the modal functionality. It should appear when clicking the View Notes button.\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nisl eget ultricies aliquam, nunc nisl aliquet nunc, eget aliquam nisl nunc eget nisl. Nullam auctor, nisl eget ultricies aliquam, nunc nisl aliquet nunc, eget aliquam nisl nunc eget nisl.\n\nNullam auctor, nisl eget ultricies aliquam, nunc nisl aliquet nunc, eget aliquam nisl nunc eget nisl. Nullam auctor, nisl eget ultricies aliquam, nunc nisl aliquet nunc, eget aliquam nisl nunc eget nisl."
             : ""),
       }))
 
@@ -249,9 +223,39 @@ export default function CourseOutlineAdmin() {
     }
   }
 
+  // Find the outline with the open note
+  const activeOutline = courseOutlines.find((outline) => outline._id === openNoteId)
+
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl">
       <ToastContainer position="top-right" autoClose={3000} />
+
+      {/* Notes Modal */}
+      <Dialog open={!!openNoteId} onOpenChange={(open) => !open && setOpenNoteId(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <StickyNote className="h-5 w-5 text-purple-600" />
+              <span>Course Notes</span>
+            </DialogTitle>
+            <DialogDescription>
+              {activeOutline?.courseName} - {activeOutline?.teacher?.firstName} {activeOutline?.teacher?.lastName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[400px] overflow-y-auto p-4 bg-gray-50 rounded-md border border-gray-100 text-gray-800">
+            {activeOutline?.notes?.split("\n").map((line, i) => (
+              <p key={i} className={i > 0 ? "mt-3" : ""}>
+                {line}
+              </p>
+            ))}
+          </div>
+          <div className="flex justify-end">
+            <DialogClose asChild>
+              <Button variant="outline">Close</Button>
+            </DialogClose>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -402,20 +406,15 @@ export default function CourseOutlineAdmin() {
                             </td>
                             <td className="px-4 py-4 text-sm">
                               {outline.notes ? (
-                                <div className="relative inline-block">
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <span className="text-purple-600 underline cursor-pointer font-medium">
-                                          View Notes
-                                        </span>
-                                      </TooltipTrigger>
-                                      <TooltipContent className="bg-black text-white p-3 rounded-md shadow-lg max-w-xs z-[9999]">
-                                        {outline.notes}
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 hover:text-purple-800 hover:border-purple-300"
+                                  onClick={() => setOpenNoteId(outline._id)}
+                                >
+                                  <StickyNote className="h-4 w-4 mr-1.5" />
+                                  View Notes
+                                </Button>
                               ) : (
                                 <span className="text-gray-400 text-xs">No notes</span>
                               )}
@@ -508,20 +507,15 @@ export default function CourseOutlineAdmin() {
                               </td>
                               <td className="px-4 py-4 text-sm">
                                 {outline.notes ? (
-                                  <div className="relative inline-block">
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger>
-                                          <span className="text-purple-600 underline cursor-pointer font-medium">
-                                            View Notes
-                                          </span>
-                                        </TooltipTrigger>
-                                        <TooltipContent className="bg-black text-white p-3 rounded-md shadow-lg max-w-xs z-[9999]">
-                                          {outline.notes}
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 hover:text-purple-800 hover:border-purple-300"
+                                    onClick={() => setOpenNoteId(outline._id)}
+                                  >
+                                    <StickyNote className="h-4 w-4 mr-1.5" />
+                                    View Notes
+                                  </Button>
                                 ) : (
                                   <span className="text-gray-400 text-xs">No notes</span>
                                 )}
@@ -617,20 +611,15 @@ export default function CourseOutlineAdmin() {
                               </td>
                               <td className="px-4 py-4 text-sm">
                                 {outline.notes ? (
-                                  <div className="relative inline-block">
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger>
-                                          <span className="text-purple-600 underline cursor-pointer font-medium">
-                                            View Notes
-                                          </span>
-                                        </TooltipTrigger>
-                                        <TooltipContent className="bg-black text-white p-3 rounded-md shadow-lg max-w-xs z-[9999]">
-                                          {outline.notes}
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 hover:text-purple-800 hover:border-purple-300"
+                                    onClick={() => setOpenNoteId(outline._id)}
+                                  >
+                                    <StickyNote className="h-4 w-4 mr-1.5" />
+                                    View Notes
+                                  </Button>
                                 ) : (
                                   <span className="text-gray-400 text-xs">No notes</span>
                                 )}
@@ -726,20 +715,15 @@ export default function CourseOutlineAdmin() {
                               </td>
                               <td className="px-4 py-4 text-sm">
                                 {outline.notes ? (
-                                  <div className="relative inline-block">
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger>
-                                          <span className="text-purple-600 underline cursor-pointer font-medium">
-                                            View Notes
-                                          </span>
-                                        </TooltipTrigger>
-                                        <TooltipContent className="bg-black text-white p-3 rounded-md shadow-lg max-w-xs z-[9999]">
-                                          {outline.notes}
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 hover:text-purple-800 hover:border-purple-300"
+                                    onClick={() => setOpenNoteId(outline._id)}
+                                  >
+                                    <StickyNote className="h-4 w-4 mr-1.5" />
+                                    View Notes
+                                  </Button>
                                 ) : (
                                   <span className="text-gray-400 text-xs">No notes</span>
                                 )}
