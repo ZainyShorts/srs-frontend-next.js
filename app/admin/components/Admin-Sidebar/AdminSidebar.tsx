@@ -58,11 +58,6 @@ const AdminSidebar = ({isSidebarOpen,setIsSidebarOpen}:{isSidebarOpen:boolean,se
       icon: Calendar,
     },  
     {
-      name: "Lesson Plans",
-      href: "/admin/course-outlines",
-      icon: Calendar,
-    },
-    {
       name: "Add Course",
       href: "/admin/add-course",
       icon: Plus,

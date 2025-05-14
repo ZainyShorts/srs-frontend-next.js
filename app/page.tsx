@@ -175,7 +175,7 @@ import axios from "axios"
 import { Loader2 } from "lucide-react"
 
 // Define the role type
-type UserRole = "Teacher" | "Admin"
+type UserRole = "Teacher" | "Admin" | "Secretary"
 
 const formSchema = z.object({
   email: z.string().email({
@@ -184,7 +184,7 @@ const formSchema = z.object({
   password: z.string().min(3, {
     message: "Password must be at least 3 characters long.",
   }),
-  role: z.enum(["Teacher", "Admin"], {
+  role: z.enum(["Teacher", "Admin", "Secretary"], {
     required_error: "Please select a role.",
   }),
 })
@@ -228,6 +228,9 @@ export default function LoginPage() {
           router.push("/admin/dashboard")
           break
         case "Teacher":
+          router.push("/teacher/dashboard")  
+          break
+           case "Secretary":
           router.push("/teacher/dashboard")
           break
         case "Student":
@@ -255,6 +258,18 @@ export default function LoginPage() {
       if(values.email === "admin@example.com" && values.password === "123"){
         setTimeout(() => {
           router.push("/admin/dashboard")
+          setIsLoading(false)
+        }, 1000) // Add a small delay to show loading state
+        return
+      }
+      setLoginError("Invalid Credentials")
+      return
+      
+    } 
+     if (values.role === "Secretary") {
+      if(values.email === "sec@gmail.com" && values.password === "123"){
+        setTimeout(() => {
+          router.push("/secretary/schedule-course")
           setIsLoading(false)
         }, 1000) // Add a small delay to show loading state
         return
@@ -308,7 +323,9 @@ export default function LoginPage() {
                       <SelectContent>
                         <SelectItem value="Teacher">Teacher</SelectItem>
                         {/* <SelectItem value="Student">Student</SelectItem> */}
-                        <SelectItem value="Admin">Admin</SelectItem>
+                        <SelectItem value="Admin">Admin</SelectItem> 
+                       <SelectItem value="Secretary">Secretary</SelectItem>
+
                       </SelectContent>
                     </Select>
                     <FormMessage />
