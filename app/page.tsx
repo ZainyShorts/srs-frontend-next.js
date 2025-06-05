@@ -175,7 +175,7 @@ import axios from "axios"
 import { Loader2 } from "lucide-react"
 
 // Define the role type
-type UserRole = "Teacher" | "Admin" | "Secretary"
+type UserRole = "Teacher" | "Admin" | "Secretary" | "Student"
 
 const formSchema = z.object({
   email: z.string().email({
@@ -184,7 +184,7 @@ const formSchema = z.object({
   password: z.string().min(3, {
     message: "Password must be at least 3 characters long.",
   }),
-  role: z.enum(["Teacher", "Admin", "Secretary"], {
+  role: z.enum(["Teacher", "Admin", "Secretary","Student"], {
     required_error: "Please select a role.",
   }),
 })
@@ -279,10 +279,10 @@ export default function LoginPage() {
       
     }
 
-    if (values.role === "Student") {
-      alert('Student login is not allowed') // Add a small delay to show loading state
-      return
-    }
+    // if (values.role === "Student") {
+    //   alert('Student login is not allowed') // Add a small delay to show loading state
+    //   return
+    // }
 
     // Regular login flow
     loginUser(values.email, values.password, values.role as UserRole)
@@ -322,7 +322,7 @@ export default function LoginPage() {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="Teacher">Teacher</SelectItem>
-                        {/* <SelectItem value="Student">Student</SelectItem> */}
+                        <SelectItem value="Student">Student</SelectItem> 
                         <SelectItem value="Admin">Admin</SelectItem> 
                        <SelectItem value="Secretary">Secretary</SelectItem>
 

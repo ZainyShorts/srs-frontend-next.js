@@ -1,43 +1,58 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { Mail, Phone, MapPin, BookOpen, Award, Calendar, Clock, User, Briefcase, Heart } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import axios from "axios"
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import {
+  Mail,
+  Phone,
+  MapPin,
+  BookOpen,
+  Award,
+  Calendar,
+  Clock,
+  User,
+  Briefcase,
+  Heart,
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import axios from "axios";
 
 export default function StudentProfile() {
-  const [student, setStudent] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [cgpa, setCgpa] = useState(0.0) 
-
+  const [student, setStudent] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [cgpa, setCgpa] = useState(0.0);
+ 
   useEffect(() => {
     const fetchStudentData = async () => {
       try {
-        setIsLoading(true)
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student/67ca11e9aaeeeab847787ba4`)
-        console.log("response", response)
-        setStudent(response.data || null)
+        const idFromStorage = localStorage.getItem("id") ?? "";
+        console.log("idFromStorage:", idFromStorage);
+        setIsLoading(true);
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_SRS_SERVER}/student/${idFromStorage}`
+        );
+        console.log("response", response);
+        setStudent(response.data || null);
       } catch (error) {
-        console.error("Error fetching student data:", error)
+        console.error("Error fetching student data:", error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchStudentData()
-  }, [])
+    fetchStudentData();
+  }, []);
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-indigo-950">
         <div className="text-xl font-semibold">Loading student profile...</div>
       </div>
-    )
+    );
   }
 
   if (!student) {
@@ -45,7 +60,7 @@ export default function StudentProfile() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-indigo-950">
         <div className="text-xl font-semibold">Student not found</div>
       </div>
-    )
+    );
   }
 
   const studentInfo = {
@@ -59,15 +74,15 @@ export default function StudentProfile() {
     section: student.section,
     enrollmentDate: new Date(student.enrollDate).toLocaleDateString(),
     expectedGraduation: student.expectedGraduation,
-  }
+  };
 
   const guardianInfo = {
     name: student.guardian.guardianName,
     relation: student.guardian.guardianRelation,
     email: student.guardian.guardianEmail,
     phone: student.guardian.guardianPhone,
-    occupation: student.guardian.guardianProfession, 
-  }
+    occupation: student.guardian.guardianProfession,
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-indigo-950 p-8">
@@ -104,8 +119,12 @@ export default function StudentProfile() {
           <CardContent className="pt-24 pb-8 px-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2">
-                <h1 className="text-4xl font-bold mb-2 text-gray-800 dark:text-white">{studentInfo.name}</h1>
-                <p className="text-xl text-gray-600 dark:text-gray-400 mb-4">{studentInfo.major}</p>
+                <h1 className="text-4xl font-bold mb-2 text-gray-800 dark:text-white">
+                  {studentInfo.name}
+                </h1>
+                <p className="text-xl text-gray-600 dark:text-gray-400 mb-4">
+                  {studentInfo.major}
+                </p>
                 <Badge variant="secondary" className="mb-6">
                   Class {studentInfo.year}-{studentInfo.section}
                 </Badge>
@@ -117,9 +136,18 @@ export default function StudentProfile() {
                     <InfoItem icon={MapPin} text={studentInfo.address} />
                   </div>
                   <div className="space-y-3">
-                    <InfoItem icon={BookOpen} text={`Class: ${studentInfo.year}-${studentInfo.section}`} />
-                    <InfoItem icon={Calendar} text={`Enrolled: ${studentInfo.enrollmentDate}`} />
-                    <InfoItem icon={Clock} text={`Expected Graduation: ${studentInfo.expectedGraduation}`} />
+                    <InfoItem
+                      icon={BookOpen}
+                      text={`Class: ${studentInfo.year}-${studentInfo.section}`}
+                    />
+                    <InfoItem
+                      icon={Calendar}
+                      text={`Enrolled: ${studentInfo.enrollmentDate}`}
+                    />
+                    <InfoItem
+                      icon={Clock}
+                      text={`Expected Graduation: ${studentInfo.expectedGraduation}`}
+                    />
                   </div>
                 </div>
               </div>
@@ -132,9 +160,13 @@ export default function StudentProfile() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-5xl font-bold mb-2 text-blue-600 dark:text-blue-400">{cgpa.toFixed(2)}</div>
+                    <div className="text-5xl font-bold mb-2 text-blue-600 dark:text-blue-400">
+                      {cgpa.toFixed(2)}
+                    </div>
                     <Progress value={(cgpa / 4) * 100} className="h-2 mb-4" />
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Cumulative GPA (out of 4.0)</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Cumulative GPA (out of 4.0)
+                    </p>
                   </CardContent>
                 </Card>
               </div>
@@ -155,7 +187,10 @@ export default function StudentProfile() {
                       <div className="space-y-3">
                         <InfoItem icon={User} text={guardianInfo.name} />
                         <InfoItem icon={Heart} text={guardianInfo.relation} />
-                        <InfoItem icon={Briefcase} text={guardianInfo.occupation} />
+                        <InfoItem
+                          icon={Briefcase}
+                          text={guardianInfo.occupation}
+                        />
                       </div>
                       <div className="space-y-3">
                         <InfoItem icon={Mail} text={guardianInfo.email} />
@@ -170,7 +205,7 @@ export default function StudentProfile() {
         </Card>
       </motion.div>
     </div>
-  )
+  );
 }
 
 function InfoItem({ icon: Icon, text }: { icon: any; text: string }) {
@@ -179,6 +214,5 @@ function InfoItem({ icon: Icon, text }: { icon: any; text: string }) {
       <Icon className="w-5 h-5 mr-2 text-blue-500 dark:text-blue-400" />
       <span>{text}</span>
     </div>
-  )
+  );
 }
-

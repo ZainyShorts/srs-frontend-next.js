@@ -419,7 +419,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
           address: formData.address || "",
           enrollDate: formData.enrollDate || "",
           expectedGraduation: formData.expectedGraduation || "",
-          profilePhoto: formData.profilePhoto ? "no" : "no",
+          profilePhoto: formData.profilePhoto,
           guardianName: formData.guardianName || "",
           guardianEmail: formData.guardianEmail || "",
           guardianPhone: formData.guardianPhone || "",
