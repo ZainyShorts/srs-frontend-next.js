@@ -70,7 +70,8 @@ export default function StudentProfile() {
     dob: new Date(student.dob).toLocaleDateString(),
     address: student.address,
     major: "Computer Science", // Not in API, keeping static
-    year: student.class,
+    year: student.class, 
+    profilePhoto : student.profilePhoto,
     section: student.section,
     enrollmentDate: new Date(student.enrollDate).toLocaleDateString(),
     expectedGraduation: student.expectedGraduation,
@@ -103,7 +104,7 @@ export default function StudentProfile() {
               >
                 <Avatar className="w-40 h-40 border-4 border-white dark:border-gray-800 shadow-lg">
                   <AvatarImage
-                    src="https://i.pinimg.com/236x/30/9e/69/309e6950c1e2ab0e94bf9a7998da2bed.jpg"
+                    src={studentInfo.profilePhoto}
                     alt={studentInfo.name}
                   />
                   <AvatarFallback>
@@ -152,7 +153,7 @@ export default function StudentProfile() {
                 </div>
               </div>
               <div>
-                <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900 dark:to-indigo-900 shadow-md">
+                {/* <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900 dark:to-indigo-900 shadow-md">
                   <CardHeader>
                     <CardTitle className="flex items-center text-2xl">
                       <Award className="mr-2" />
@@ -168,7 +169,7 @@ export default function StudentProfile() {
                       Cumulative GPA (out of 4.0)
                     </p>
                   </CardContent>
-                </Card>
+                </Card> */}
               </div>
             </div>
 

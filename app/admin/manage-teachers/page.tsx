@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import axios from "axios"
-import { ChevronLeft, ChevronRight, Edit, Trash2, Plus, Loader2, FileText, User } from "lucide-react"
+import { ChevronLeft, ChevronRight, Edit, Trash2, Plus, Loader2, FileText, User, BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { debounce } from "lodash"
 import { useCallback } from "react"
@@ -14,6 +14,7 @@ import AddTeacherModal from "./Add-Teachers/AddTeachers"
 import { toast } from "react-toastify"
 import { activities } from "@/lib/activities"
 import { addActivity } from "@/lib/actitivityFunctions"
+import AssignCoursesModal from "./assignedCourseModal"
 
 interface Teacher {
   _id: string
@@ -37,6 +38,7 @@ export default function TeachersTable() {
   const [searchTerm, setSearchTerm] = useState("")
   const [departmentFilter, setDepartmentFilter] = useState("all")
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isAssignCoursesModalOpen, setIsAssignCoursesModalOpen] = useState(false)
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null)
   const [departments, setDepartments] = useState<{ _id: string; name: string }[]>([])
   const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(false)
@@ -145,6 +147,12 @@ export default function TeachersTable() {
           </Button>
           <Button onClick={() => setOpen(true)} className="bg-black text-white hover:bg-gray-800">
             <FileText className="mr-2 h-4 w-4" /> Import Teachers
+          </Button>
+          <Button 
+            onClick={() => setIsAssignCoursesModalOpen(true)} 
+            className="bg-black text-white hover:bg-gray-800"
+          >
+            <BookOpen className="mr-2 h-4 w-4" /> Assign Courses
           </Button>
           <TeachersExcelUploadModal
             open={open}
@@ -312,7 +320,12 @@ export default function TeachersTable() {
         teacherData={selectedTeacher}
         onSuccess={fetchTeachers}
       />
+      
+      <AssignCoursesModal
+        isOpen={isAssignCoursesModalOpen}
+        onClose={() => setIsAssignCoursesModalOpen(false)}
+        teachers={teachers}
+      />
     </div>
   )
 }
-

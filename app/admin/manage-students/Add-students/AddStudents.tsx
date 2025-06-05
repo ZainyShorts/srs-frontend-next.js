@@ -6,7 +6,8 @@ import { toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { StudentForm } from "./student-form"
-import { GuardianForm } from "./guardian-form"  
+import { GuardianForm } from "./guardian-form"   
+import { uploadImageToAWS } from "@/lib/awsUpload"
 import { addActivity } from "@/lib/actitivityFunctions"
 import { activities } from "@/lib/activities"
 
@@ -396,133 +397,80 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
   }
 
   const handleSubmit = async () => {
-    if (!validateGuardianForm()) {
-      return
+  if (!validateGuardianForm()) {
+    return
+  }
+
+  setIsSubmitting(true)
+
+  try {
+    let apiData
+    let profilePhotoUrl = null
+    let guardianPhotoUrl = null
+    let transcriptsUrls = []
+
+    // Upload profile photo if exists
+    if (formData.profilePhoto instanceof File) {
+      const uploadResponse = await uploadImageToAWS(formData.profilePhoto, (progress) => {
+        console.log(`Uploading profile photo: ${progress}%`)
+      })
+      profilePhotoUrl = uploadResponse.awsUrl
     }
 
-    setIsSubmitting(true)
+    // Upload guardian photo if exists
+    if (formData.guardianPhoto instanceof File) {
+      const uploadResponse = await uploadImageToAWS(formData.guardianPhoto, (progress) => {
+        console.log(`Uploading guardian photo: ${progress}%`)
+      })
+      guardianPhotoUrl = uploadResponse.awsUrl
+    }
 
-    try {
-      let apiData
-
-      if (studentData) {
-        apiData = {
-          studentId: formData.studentId || "",
-          firstName: formData.firstName || "",
-          lastName: formData.lastName || "",
-          class: formData.class || "",
-          section: formData.section || "",
-          gender: formData.gender || "",
-          dob: formData.dob || "",
-          email: formData.email || "",
-          phone: formData.phone || "",
-          address: formData.address || "",
-          enrollDate: formData.enrollDate || "",
-          expectedGraduation: formData.expectedGraduation || "",
-          profilePhoto: formData.profilePhoto,
-          guardianName: formData.guardianName || "",
-          guardianEmail: formData.guardianEmail || "",
-          guardianPhone: formData.guardianPhone || "",
-          guardianPhoto: formData.guardianPhoto ? "no" : "no",
-          guardianRelation: formData.guardianRelation || "",
-          guardianProfession: formData.guardianProfession || "",
-          iipFlag: formData.iipFlag || false,
-          honorRolls: Boolean(formData.honorRolls),
-          athletics: Boolean(formData.athletics),
-          clubs: formData.clubs || "",
-          lunch: formData.lunch || "",
-          nationality: formData.nationality || "",
-          transcripts: "no",
-        }
-        console.log("api data", apiData)
-        const response = await axios.put(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student/${studentData._id}`, apiData)
-        if (response.data.status == 409) {
-          toast.error(response.data.msg)
-        } else {
-          toast.success("Student updated successfully", {
-            position: "top-right",
-            autoClose: 3000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-          })
-          await handleDone()   
-      const message = activities.admin.updateStudent.description.replace('{studentName}', apiData.firstName);
-          
-          const activity = { 
-            title : activities.admin.updateStudent.action, 
-            subtitle : message, 
-            performBy : "Admin"
-           }; 
-          const act =  await addActivity(activity);  
-          console.log('activity' , act);
-           
-          resetForm()
-          onClose()
-        }
-      } else {
-        apiData = {
-          studentId: formData.studentId || "",
-          firstName: formData.firstName || "",
-          lastName: formData.lastName || "",
-          class: formData.class || "",
-          section: formData.section || "",
-          gender: formData.gender || "",
-          dob: formData.dob || "",
-          email: formData.email || "",
-          phone: formData.phone || "",
-          address: formData.address || "",
-          enrollDate: formData.enrollDate || "",
-          expectedGraduation: formData.expectedGraduation || "",
-          profilePhoto: formData.profilePhoto ? "no" : "no",
-          guardianName: formData.guardianName || "",
-          guardianEmail: formData.guardianEmail || "",
-          guardianPhone: formData.guardianPhone || "",
-          guardianPhoto: formData.guardianPhoto ? "no" : "no",
-          guardianRelation: formData.guardianRelation || "",
-          guardianProfession: formData.guardianProfession || "",
-          iipFlag: formData.iipFlag || false,
-          honorRolls: Boolean(formData.honorRolls),
-          athletics: Boolean(formData.athletics),
-          clubs: formData.clubs || "",
-          lunch: formData.lunch || "",
-          nationality: formData.nationality || "",
-          transcripts: "no",
-        }
-
-        console.log("AddingData", apiData)
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student/add`, apiData)
-        console.log("response", response)
-        if (response.data.status == 409) {
-          toast.error(response.data.msg)
-        } else {
-          toast.success("Student added successfully", {
-            position: "top-right",
-            autoClose: 3000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-          })
-          await handleDone()   
-          const message = activities.admin.updateStudent.description.replace('{studentName}', apiData.firstName);
-          const activity = { 
-            title : activities.admin.addStudent.action, 
-            subtitle : message, 
-            performBy : "Admin"
-           }; 
-          const act =  await addActivity(activity);  
-          console.log('activity' , act);
-           
-          resetForm()
-          onClose()
-        }
-
+    // Upload transcripts if they exist
+    if (formData.transcripts.length > 0) {
+      for (const transcript of formData.transcripts) {
+        const uploadResponse = await uploadImageToAWS(transcript, (progress) => {
+          console.log(`Uploading transcript ${transcript.name}: ${progress}%`)
+        })
+        transcriptsUrls.push(uploadResponse.awsUrl)
       }
-    } catch (error) {
-      if (error.response && error.response.status === 409) {
-        toast.error("This Email is Already Registered", {
+    }
+
+    if (studentData) {
+      apiData = {
+        studentId: formData.studentId || "",
+        firstName: formData.firstName || "",
+        lastName: formData.lastName || "",
+        class: formData.class || "",
+        section: formData.section || "",
+        gender: formData.gender || "",
+        dob: formData.dob || "",
+        email: formData.email || "",
+        phone: formData.phone || "",
+        address: formData.address || "",
+        enrollDate: formData.enrollDate || "",
+        expectedGraduation: formData.expectedGraduation || "",
+        profilePhoto: profilePhotoUrl || studentData.profilePhoto || "no",
+        guardianName: formData.guardianName || "",
+        guardianEmail: formData.guardianEmail || "",
+        guardianPhone: formData.guardianPhone || "",
+        guardianPhoto: guardianPhotoUrl || studentData.guardian?.guardianPhoto || "no",
+        guardianRelation: formData.guardianRelation || "",
+        guardianProfession: formData.guardianProfession || "",
+        iipFlag: formData.iipFlag || false,
+        honorRolls: Boolean(formData.honorRolls),
+        athletics: Boolean(formData.athletics),
+        clubs: formData.clubs || "",
+        lunch: formData.lunch || "",
+        nationality: formData.nationality || "",
+        transcripts: transcriptsUrls.length > 0 ? transcriptsUrls.join(',') : studentData.transcripts || "no",
+      }
+
+      console.log("api data", apiData)
+      const response = await axios.put(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student/${studentData._id}`, apiData)
+      if (response.data.status == 409) {
+        toast.error(response.data.msg)
+      } else {
+        toast.success("Student updated successfully", {
           position: "top-right",
           autoClose: 3000,
           hideProgressBar: false,
@@ -530,11 +478,103 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
           pauseOnHover: true,
           draggable: true,
         })
+        await handleDone()   
+        const message = activities.admin.updateStudent.description.replace('{studentName}', apiData.firstName);
+        
+        const activity = { 
+          title: activities.admin.updateStudent.action, 
+          subtitle: message, 
+          performBy: "Admin"
+        }; 
+        const act = await addActivity(activity);  
+        console.log('activity', act);
+         
+        resetForm()
+        onClose()
       }
-    } finally {
-      setIsSubmitting(false)
+    } else {
+      apiData = {
+        studentId: formData.studentId || "",
+        firstName: formData.firstName || "",
+        lastName: formData.lastName || "",
+        class: formData.class || "",
+        section: formData.section || "",
+        gender: formData.gender || "",
+        dob: formData.dob || "",
+        email: formData.email || "",
+        phone: formData.phone || "",
+        address: formData.address || "",
+        enrollDate: formData.enrollDate || "",
+        expectedGraduation: formData.expectedGraduation || "",
+        profilePhoto: profilePhotoUrl || "no",
+        guardianName: formData.guardianName || "",
+        guardianEmail: formData.guardianEmail || "",
+        guardianPhone: formData.guardianPhone || "",
+        guardianPhoto: guardianPhotoUrl || "no",
+        guardianRelation: formData.guardianRelation || "",
+        guardianProfession: formData.guardianProfession || "",
+        iipFlag: formData.iipFlag || false,
+        honorRolls: Boolean(formData.honorRolls),
+        athletics: Boolean(formData.athletics),
+        clubs: formData.clubs || "",
+        lunch: formData.lunch || "",
+        nationality: formData.nationality || "",
+        transcripts: transcriptsUrls.length > 0 ? transcriptsUrls.join(',') : "no",
+      }
+
+      console.log("AddingData", apiData)
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student/add`, apiData)
+      console.log("response", response)
+      if (response.data.status == 409) {
+        toast.error(response.data.msg)
+      } else {
+        toast.success("Student added successfully", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        })
+        await handleDone()   
+        const message = activities.admin.updateStudent.description.replace('{studentName}', apiData.firstName);
+        const activity = { 
+          title: activities.admin.addStudent.action, 
+          subtitle: message, 
+          performBy: "Admin"
+        }; 
+        const act = await addActivity(activity);  
+        console.log('activity', act);
+         
+        resetForm()
+        onClose()
+      }
     }
+  } catch (error) {
+    console.error("Error in form submission:", error)
+    if (error.response && error.response.status === 409) {
+      toast.error("This Email is Already Registered", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      })
+    } else {
+      toast.error("An error occurred while submitting the form", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      })
+    }
+  } finally {
+    setIsSubmitting(false)
   }
+}
 
   const resetForm = () => {
     setCurrentStep("student")

@@ -83,13 +83,13 @@ export default function GradesPage() {
     project: 25,
     finalTerm: 25,
   })
-
+ 
   // Fetch data on component mount
   React.useEffect(() => {
     const fetchData = async () => {
       try {
         const [coursesResponse, teachersResponse] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course`),
+          fetch(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers/get/assignedCourses?teacherId=${selectedTeacher}`),
           fetch(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers`),
         ])
 
@@ -100,7 +100,8 @@ export default function GradesPage() {
         const coursesData = await coursesResponse.json()
         const teachersData = await teachersResponse.json()
 
-        setCourses(coursesData)
+        setCourses(coursesData) 
+        console.log('data',teachersData)
         setTeachers(teachersData.data || [])
       } catch (err) {
         setError("Failed to load data")
