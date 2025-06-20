@@ -264,7 +264,7 @@ export function StudentForm({
                 />
                 {errors.dob && <p className="text-sm text-red-500 mt-1">{errors.dob}</p>}
               </div>
-              <div className="space-y-2">
+              <div className={`space-y-2 ${isEditing === false ? 'hidden' : ""}`}>
                 <Label htmlFor="studentId">Student Id </Label>
                 <Input
                   id="studentId"
@@ -314,7 +314,7 @@ export function StudentForm({
                 </Select>
                 {errors.section && <p className="text-sm text-red-500 mt-1">{errors.section}</p>}
               </div>
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="enrollDate">Enrollment Date</Label>
                 <Input
                   id="enrollDate"
@@ -345,7 +345,37 @@ export function StudentForm({
                   </SelectContent>
                 </Select>
                 {errors.expectedGraduation && <p className="text-sm text-red-500 mt-1">{errors.expectedGraduation}</p>}
-              </div>
+              </div> */}
+
+<div className="space-y-2">
+  <Label htmlFor="enrollDate">Enrollment Date</Label>
+  <Input
+    id="enrollDate"
+    name="enrollDate"
+    type="date"
+    className={`border-gray-200 ${isEditing ? "bg-gray-100 cursor-not-allowed" : ""}`}
+    value={formData.enrollDate}
+    onChange={onInputChange}
+    disabled={disabled || isEditing} // Add isEditing to disabled condition
+  />
+</div>
+
+<div className="space-y-2">
+  <Label htmlFor="expectedGraduation">Expected Graduation Date</Label>
+  <Input
+    id="expectedGraduation"
+    name="expectedGraduation"
+    type="text"
+    className="border-gray-200 bg-gray-100 cursor-not-allowed"
+    value={formData.enrollDate ? 
+      new Date(new Date(formData.enrollDate).setFullYear(
+        new Date(formData.enrollDate).getFullYear() + 5
+      )).toISOString().split('T')[0] : 
+      ''}
+    readOnly
+    disabled
+  />
+</div>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">

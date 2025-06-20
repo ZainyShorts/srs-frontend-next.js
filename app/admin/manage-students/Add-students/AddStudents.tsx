@@ -272,10 +272,10 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
     const newErrors = { ...errors }
     let isValid = true
 
-    if (!formData.studentId) {
-      newErrors.studentId = "Roll number is required"
-      isValid = false
-    }
+    // if (!formData.studentId) {
+    //   newErrors.studentId = "Roll number is required"
+    //   isValid = false
+    // }
 
     if (!formData.firstName) {
       newErrors.firstName = "First name is required"
@@ -385,6 +385,18 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
 
     return isValid
   }
+  function generateCode(): string {
+    let length = 10
+  const timestamp = Date.now().toString(); // e.g., '1718542400000'
+  const random = Math.floor(Math.random() * 1000000).toString(); // 6-digit random number
+
+  // Combine timestamp and random, then trim or pad to the desired length
+  const combined = timestamp + random;
+
+  // Ensure fixed length by slicing from the end (more randomness)
+  return combined.slice(-length);
+}
+
 
   const handleContinueToGuardian = () => {
     if (validateStudentForm()) {
@@ -436,8 +448,9 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
     }
 
     if (studentData) {
+    
       apiData = {
-        studentId: formData.studentId || "",
+        studentId: formData.studentId,
         firstName: formData.firstName || "",
         lastName: formData.lastName || "",
         class: formData.class || "",
@@ -494,7 +507,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
       }
     } else {
       apiData = {
-        studentId: formData.studentId || "",
+        studentId: generateCode(),
         firstName: formData.firstName || "",
         lastName: formData.lastName || "",
         class: formData.class || "",

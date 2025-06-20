@@ -972,8 +972,15 @@ export default function ScheduleCoursePage() {
 
       if (isEdit) {
         // Update existing schedule
-        await axios.patch(`${process.env.NEXT_PUBLIC_SRS_SERVER}/schedule/${submittedFormData._id}`, dataToSubmit)
-        toast.success("Schedule updated successfully!")
+        const response = await axios.patch(`${process.env.NEXT_PUBLIC_SRS_SERVER}/schedule/${submittedFormData._id}`, dataToSubmit)
+        // toast.success("Schedule updated successfully!")
+        console.log(response)
+                    if(response.data.success){
+                      toast.success(response.data.message)
+                    }else{
+                      toast.error(response.data.message)
+                      return
+                    }
         const message = activities.admin.updateScheduleClass.description.replace(
           "{className}",
           submittedFormData.className,
@@ -986,8 +993,15 @@ export default function ScheduleCoursePage() {
         await addActivity(activity)
       } else {
         // Create new schedule
-        await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/schedule/add`, dataToSubmit)
-        toast.success("Course scheduled successfully!")
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_SRS_SERVER}/schedule/add`, dataToSubmit)
+        // toast.success("Course scheduled successfully!")
+        console.log(response)
+                    if(response.data.success){
+                      toast.success(response.data.message)
+                    }else{
+                      toast.error(response.data.message)
+                      return
+                    }
         const message = activities.admin.scheduleClass.description.replace("{className}", submittedFormData.className)
         const activity = {
           title: activities.admin.scheduleClass.action,

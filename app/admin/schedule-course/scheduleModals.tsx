@@ -758,7 +758,13 @@ export function ScheduleModal({
             const response = await axios.get(
               `${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers?department=${selectedCourse.departmentId.departmentName}`,
             )
-            setFilteredTeachers(response.data.data || [])
+            console.log(response)
+            if(response.data.success){
+              toast.success(response.data.message)
+              setFilteredTeachers(response.data.data || [])
+            }else{
+              toast.error(response.data.message)
+            }
           } catch (error) {
             console.error("Error fetching teachers for department:", error)
             toast.error("Failed to load instructors for this department")

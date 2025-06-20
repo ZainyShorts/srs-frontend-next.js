@@ -209,7 +209,7 @@ export default function LoginPage() {
       setLoginError(null)
       setIsLoading(true)
 
-      
+      console.log(role)
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_SRS_SERVER}/user/login`,
         { email, password, role }, // Include role in the request
