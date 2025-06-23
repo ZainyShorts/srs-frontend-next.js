@@ -369,11 +369,11 @@ export default function AttendancePage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="room-number">Room Number</Label>
+              <Label htmlFor="room-number">Grade Level</Label>
               <Input
                 type="text"
                 id="room-number"
-                placeholder="Enter room number"
+                placeholder="Enter Grade Level"
                 value={roomNumber}
                 onChange={(e) => setRoomNumber(e.target.value)}
               />

@@ -11,6 +11,14 @@ import { ExcelUploadModal } from "./Add-students/excellUpload"
 import { toast } from "react-toastify"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import StudentGuardianModal from "./Add-students/AddStudents"
 import axios from "axios"
 
@@ -27,6 +35,8 @@ export default function StudentsTable() {
   const [editingStudent, setEditingStudent] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [copiedId, setCopiedId] = useState(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [studentToDelete, setStudentToDelete] = useState(null)
 
   const fetchStudentData = useCallback(async () => {
     try {
@@ -49,6 +59,7 @@ export default function StudentsTable() {
       setIsLoading(false)
     }
   }, [classFilter])
+
   const fetchStudentDataBystudentId = useCallback(
     debounce(async (studentId: any) => {
       try {
@@ -203,30 +214,58 @@ export default function StudentsTable() {
     }
     return String(student[key] || "")
   }
-  const handleDelete = async (id: any, name: any) => {
+
+  const handleDeleteClick = (student: any) => {
+    setStudentToDelete(student)
+    setDeleteConfirmOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!studentToDelete) return
+
     setIsLoading(true)
+    setDeleteConfirmOpen(false)
 
-    const response = await axios.delete(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student/${id}`)
-    console.log("response", response)
-    toast.success("Student Deleted successfully", {
-      position: "top-right",
-      autoClose: 3000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-    })
+    try {
+      const response = await axios.delete(`${process.env.NEXT_PUBLIC_SRS_SERVER}/student/${studentToDelete._id}`)
+      console.log("response", response)
+      toast.success("Student deleted successfully", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      })
 
-    await fetchStudentData()
-    const message = activities.admin.deleteStudent.description.replace("{courseName}", name)
+      await fetchStudentData()
+      const message = activities.admin.deleteStudent.description.replace("{courseName}", studentToDelete.firstName)
 
-    const activity = {
-      title: activities.admin.deleteStudent.action,
-      subtitle: message,
-      performBy: "Admin",
+      const activity = {
+        title: activities.admin.deleteStudent.action,
+        subtitle: message,
+        performBy: "Admin",
+      }
+      await addActivity(activity)
+    } catch (error) {
+      console.error("Error deleting student:", error)
+      toast.error("Failed to delete student", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      })
+    } finally {
+      setIsLoading(false)
+      setStudentToDelete(null)
     }
-    const act = await addActivity(activity)
-    setIsLoading(false)
+  }
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmOpen(false)
+    setStudentToDelete(null)
   }
 
   const handlePageChange = (newPage: number) => {
@@ -271,7 +310,7 @@ export default function StudentsTable() {
           className="max-w-sm"
         />
         <Input
-          placeholder="Search rooms..."
+          placeholder="Search Grade Level..."
           onChange={(e) => {
             debouncedRoomSearch(e.target.value)
           }}
@@ -322,7 +361,7 @@ export default function StudentsTable() {
                     </Button>
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
-                    <Button onClick={() => handleDelete(student._id, student.firstName)} variant="ghost" size="sm">
+                    <Button onClick={() => handleDeleteClick(student)} variant="ghost" size="sm">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
@@ -361,6 +400,30 @@ export default function StudentsTable() {
         </div>
       </div>
 
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete student{" "}
+              <span className="font-semibold">
+                {studentToDelete?.firstName} {studentToDelete?.lastName}
+              </span>
+              ? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelDelete}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Delete Student
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <StudentGuardianModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -370,4 +433,3 @@ export default function StudentsTable() {
     </div>
   )
 }
-

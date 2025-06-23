@@ -10,6 +10,14 @@ import { Input } from "@/components/ui/input"
 import { TeachersExcelUploadModal } from "./Add-Teachers/excellUpload"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import AddTeacherModal from "./Add-Teachers/AddTeachers"
 import { toast } from "react-toastify"
 import { activities } from "@/lib/activities"
@@ -42,14 +50,16 @@ export default function TeachersTable() {
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null)
   const [departments, setDepartments] = useState<{ _id: string; name: string }[]>([])
   const [isDepartmentsLoading, setIsDepartmentsLoading] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [teacherToDelete, setTeacherToDelete] = useState<Teacher | null>(null)
 
   const fetchTeachers = useCallback(async () => {
     try {
-      setLoading(true) 
+      setLoading(true)
       console.log(departmentFilter)
       const url =
         departmentFilter === "all"
-          ? `${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers` 
+          ? `${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers`
           : `${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers?department=${departmentFilter}`
       const response = await axios.get(url)
       setTeachers(response.data.data.reverse())
@@ -80,25 +90,41 @@ export default function TeachersTable() {
     fetchDepartments()
   }, [fetchTeachers])
 
-  const handleDeleteTeacher = async (id: string) => {
+  const handleDeleteClick = (teacher: Teacher) => {
+    setTeacherToDelete(teacher)
+    setDeleteConfirmOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!teacherToDelete) return
+
     try {
-      setDeleteLoading(id)
-      await axios.delete(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers/${id}`)
+      setDeleteLoading(teacherToDelete._id)
+      setDeleteConfirmOpen(false)
+
+      await axios.delete(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers/${teacherToDelete._id}`)
       toast.success("Teacher deleted successfully")
+
       const message = activities.admin.deleteTeacher.description
-          const activity = {
-            title: activities.admin.deleteTeacher.action,
-            subtitle: message,
-            performBy: "Admin",
-          } 
-      await addActivity(activity) 
+      const activity = {
+        title: activities.admin.deleteTeacher.action,
+        subtitle: message,
+        performBy: "Admin",
+      }
+      await addActivity(activity)
       fetchTeachers()
     } catch (error) {
       console.error("Error deleting teacher:", error)
       toast.error("Failed to delete teacher")
     } finally {
       setDeleteLoading(null)
+      setTeacherToDelete(null)
     }
+  }
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmOpen(false)
+    setTeacherToDelete(null)
   }
 
   const handleEditTeacher = (teacher: Teacher) => {
@@ -148,12 +174,9 @@ export default function TeachersTable() {
           <Button onClick={() => setOpen(true)} className="bg-black text-white hover:bg-gray-800">
             <FileText className="mr-2 h-4 w-4" /> Import Teachers
           </Button>
-          <Button 
-            onClick={() => setIsAssignCoursesModalOpen(true)} 
-            className="bg-black text-white hover:bg-gray-800"
-          >
-            <BookOpen className="mr-2 h-4 w-4" /> Assign Courses
-          </Button>
+          {/* <Button onClick={() => setIsAssignCoursesModalOpen(true)} className="bg-black text-white hover:bg-gray-800"> */}
+            {/* <BookOpen className="mr-2 h-4 w-4" /> Assign Courses
+          </Button> */}
           <TeachersExcelUploadModal
             open={open}
             onClose={() => setOpen(false)}
@@ -259,7 +282,7 @@ export default function TeachersTable() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteTeacher(teacher._id)}
+                          onClick={() => handleDeleteClick(teacher)}
                           disabled={deleteLoading === teacher._id}
                         >
                           {deleteLoading === teacher._id ? (
@@ -314,13 +337,37 @@ export default function TeachersTable() {
         </>
       )}
 
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete teacher{" "}
+              <span className="font-semibold">
+                {teacherToDelete?.firstName} {teacherToDelete?.lastName}
+              </span>
+              ? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelDelete}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Delete Teacher
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AddTeacherModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         teacherData={selectedTeacher}
         onSuccess={fetchTeachers}
       />
-      
+
       <AssignCoursesModal
         isOpen={isAssignCoursesModalOpen}
         onClose={() => setIsAssignCoursesModalOpen(false)}

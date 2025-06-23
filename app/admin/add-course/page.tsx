@@ -264,10 +264,10 @@ export default function CoursesPage() {
       return
     }
 
-    if (!formData.active && !formData.special) {
-      toast.error("Either Active or Special status must be selected")
-      return
-    }
+    // if (!formData.active && !formData.special) {
+    //   toast.error("Either Active or Special status must be selected")
+    //   return
+    // }
 
     try {
       setIsSubmitting(true)

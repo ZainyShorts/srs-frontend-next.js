@@ -45,6 +45,7 @@ interface StudentData {
   clubs: string // Add this line
   lunch: string // Add this line
   nationality: string // Add this line
+  emergencyContact: string 
 }
 
 interface FormErrors {
@@ -67,6 +68,7 @@ interface FormErrors {
   clubs: string // Add this line
   lunch: string // Add this line
   nationality: string // Add this line
+  emergencyContact: string
 }
 
 export default function StudentGuardianModal({ isOpen, onClose, studentData, handleDone }: StudentGuardianModalProps) {
@@ -99,6 +101,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
     clubs: "", // Add this line
     lunch: "", // Add this line
     nationality: "", // Add this line
+    emergencyContact: ""
   })
 
   const [errors, setErrors] = useState<FormErrors>({
@@ -121,6 +124,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
     clubs: "", // Add this line
     lunch: "", // Add this line
     nationality: "", // Add this line
+    emergencyContact: ""
   })
 
   const [studentPhotoPreview, setStudentPhotoPreview] = useState<string | null>(null)
@@ -148,6 +152,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
         phone: "",
         address: "",
         expectedGraduation: "",
+        emergencyContact:""
       }))
     }
   }, [currentStep])
@@ -183,6 +188,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
         clubs: studentData.clubs || "", // Add this line
         lunch: studentData.lunch || "", // Add this line
         nationality: studentData.nationality || "", // Add this line
+        emergencyContact: studentData.emergencyContact || "N/A"
       })
     }
   }, [studentData])
@@ -306,18 +312,16 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
       newErrors.email = "Email is required"
       isValid = false
     }
-    // else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-    //   newErrors.email = "Invalid email format"
-    //   isValid = false
-    // }
-
-    if (!formData.phone) {
-      newErrors.phone = "Phone number is required"
-      isValid = false
-    } else if (!/^\d{10}$/.test(formData.phone)) {
-      newErrors.phone = "Phone must be 10 digits"
+    if (!formData.emergencyContact) {
+      newErrors.emergencyContact = "Emergency Contact is required"
       isValid = false
     }
+   
+    if(!formData.phone){
+      formData.phone = "N/A"
+    }
+
+    
 
     if (!formData.address) {
       newErrors.address = "Address is required"
@@ -354,6 +358,11 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
       isValid = false
     }
 
+    if(!formData.emergencyContact){
+      newErrors.emergencyContact = "Emergency Contact required"
+      isValid = false
+    }
+
     if (!formData.guardianEmail) {
       newErrors.guardianEmail = "Guardian email is required"
       isValid = false
@@ -363,12 +372,10 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
     }
 
     if (!formData.guardianPhone) {
-      newErrors.guardianPhone = "Guardian phone number is required"
-      isValid = false
-    } else if (!/^\d{10}$/.test(formData.guardianPhone)) {
-      newErrors.guardianPhone = "Phone must be 10 digits"
-      isValid = false
-    }
+      formData.guardianPhone = "N/A"
+      // newErrors.guardianPhone = "Guardian phone number is required"
+      // isValid = false
+    } 
 
     setErrors(newErrors)
 
@@ -476,6 +483,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
         lunch: formData.lunch || "",
         nationality: formData.nationality || "",
         transcripts: transcriptsUrls.length > 0 ? transcriptsUrls.join(',') : studentData.transcripts || "no",
+        emergencyContact: formData.emergencyContact || "N/A",
       }
 
       console.log("api data", apiData)
@@ -533,6 +541,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
         lunch: formData.lunch || "",
         nationality: formData.nationality || "",
         transcripts: transcriptsUrls.length > 0 ? transcriptsUrls.join(',') : "no",
+        emergencyContact: formData.emergencyContact || "N/A",
       }
 
       console.log("AddingData", apiData)
@@ -618,6 +627,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
       clubs: "", // Add this line
       lunch: "", // Add this line
       nationality: "", // Add this line
+      emergencyContact: ""
     })
     setStudentPhotoPreview(null)
     setGuardianPhotoPreview(null)

@@ -85,7 +85,7 @@ export default function Schedule() {
           id: `${item._id}-${schedule.date}`,
           name: item.courseId.courseName,
           time: `${schedule.startTime} - ${schedule.endTime}`,
-          location: `Room ${item.className}`,
+          location: `Grade Level ${item.className}`,
           startTime: schedule.startTime,
           endTime: schedule.endTime,
         })

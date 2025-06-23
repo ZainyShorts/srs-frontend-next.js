@@ -369,11 +369,11 @@ export default function ReportsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>{reportType === "student" ? "Room Number" : "Select Departments"}</Label>
+                <Label>{reportType === "student" ? "Grade Level" : "Select Departments"}</Label>
                 {reportType === "student" ? (
                   <Input
                     type="text"
-                    placeholder="Enter Home Room"
+                    placeholder="Enter Grade Level"
                     value={gradeLevel}
                     onChange={(e) => setGradeLevel(e.target.value)}
                     className="border-gray-200"

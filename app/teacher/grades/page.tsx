@@ -89,7 +89,8 @@ export default function GradesPage() {
     const fetchData = async () => {
       try {
         const [coursesResponse, teachersResponse] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers/get/assignedCourses?teacherId=${selectedTeacher}`),
+          // fetch(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers/get/assignedCourses?teacherId=${selectedTeacher}`),
+          fetch(`${process.env.NEXT_PUBLIC_SRS_SERVER}/course`),
           fetch(`${process.env.NEXT_PUBLIC_SRS_SERVER}/teachers`),
         ])
 
@@ -113,6 +114,7 @@ export default function GradesPage() {
 
     fetchData()
   }, [])
+ 
 
   const handleGradeChange = (studentId: string, assessment: string, value: string) => {
     // Track which student's grades have been modified
@@ -296,10 +298,10 @@ export default function GradesPage() {
 
       toast.success(`Created grades for ${formattedGrades.length} student(s)`)
     } catch (err: any) {
-      setError(`${err}`)
+      setError(`You cannot grade it again.`)
       console.error("Error creating grades:", err)
       if (err?.response?.status === 400) {
-        toast.error("Grading for this room already exists")
+        toast.error("Grading for this Grade Level already exists")
       } else {
         toast.error("Unable to create Grades")
       }
@@ -450,7 +452,7 @@ export default function GradesPage() {
           <Card className="shadow-md">
             <CardHeader>
               <CardTitle>Grading Configuration</CardTitle>
-              <CardDescription>Select teacher, section, and room to manage grades</CardDescription>
+              <CardDescription>Select teacher, section, and grade level to manage grades</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -500,11 +502,11 @@ export default function GradesPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="room-number">Room Number</Label>
+                  <Label htmlFor="room-number">Grade Level</Label>
                   <Input
                     type="text"
                     id="room-number"
-                    placeholder="Enter room number"
+                    placeholder="Enter Grade Level"
                     value={roomNumber}
                     onChange={(e) => setRoomNumber(e.target.value)}
                   />
@@ -702,7 +704,7 @@ export default function GradesPage() {
               <div className="text-center py-8">
                 <h3 className="text-xl font-medium text-gray-700 mb-2">Grades will be displayed here</h3>
                 <p className="text-gray-500">
-                  Select a teacher, section, and room number, then click "Load Grading" or "Create Grading"
+                  Select a teacher, section, and grade level, then click "Load Grading" or "Create Grading"
                 </p>
               </div>
             </Card>

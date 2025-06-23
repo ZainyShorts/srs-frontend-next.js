@@ -161,8 +161,7 @@ export default function AssignCoursesModal({ isOpen, onClose, teachers }: Assign
                   {courses.length > 0 ? (
                     courses.map((course) => (
                       <SelectItem key={course._id} value={course._id}>
-                        {course.courseCode}: {course.courseName} 
-                        {course.assigned && " (Already Assigned)"}
+                        {course.courseCode}: {course.courseName} {course.assigned && ` (Already Assigned)`}
                       </SelectItem>
                     ))
                   ) : (

@@ -33,6 +33,7 @@ interface StudentFormProps {
     clubs: string
     lunch: string
     nationality: string
+    emergencyContact: string
     [key: string]: any
   }
   errors: {
@@ -51,6 +52,7 @@ interface StudentFormProps {
     clubs: string
     lunch: string
     nationality: string
+    emergencyContact: string
     [key: string]: any
   }
   photoPreview: string | null
@@ -278,11 +280,11 @@ export function StudentForm({
                 {errors.studentId && <p className="text-sm text-red-500 mt-1">{errors.studentId}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="class">Home Room </Label>
+                <Label htmlFor="class">Grade Level </Label>
                 <Input
                   id="class"
                   name="class"
-                  placeholder="Enter Home Room"
+                  placeholder="Enter Grade Level"
                   className={`border-gray-200 ${errors.class ? "border-red-500" : ""}`}
                   value={formData.class}
                   onChange={onInputChange}
@@ -290,7 +292,23 @@ export function StudentForm({
                 />
                 {errors.class && <p className="text-sm text-red-500 mt-1">{errors.class}</p>}
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="emergencyContact">Emergency Contact </Label>
+                <Input
+                  id="emergencyContact"
+                  name="emergencyContact"
+                  placeholder="Emergency Contact"
+                  className={`border-gray-200 ${errors.class ? "border-red-500" : ""}`}
+                  value={formData.emergencyContact}
+                  onChange={onInputChange}
+                  disabled={disabled}
+                />
+                {errors.emergencyContact && <p className="text-sm text-red-500 mt-1">{errors.emergencyContact}</p>}
+              </div>
+
             </div>
+
 
             <div className="grid gap-6 md:grid-cols-3">
               <div className="space-y-2">
@@ -361,21 +379,24 @@ export function StudentForm({
 </div>
 
 <div className="space-y-2">
-  <Label htmlFor="expectedGraduation">Expected Graduation Date</Label>
+  <Label htmlFor="expectedGraduation">Expected Graduation Year</Label>
   <Input
     id="expectedGraduation"
     name="expectedGraduation"
     type="text"
     className="border-gray-200 bg-gray-100 cursor-not-allowed"
-    value={formData.enrollDate ? 
-      new Date(new Date(formData.enrollDate).setFullYear(
-        new Date(formData.enrollDate).getFullYear() + 5
-      )).toISOString().split('T')[0] : 
-      ''}
+    value={
+      formData.enrollDate
+        ? new Date(new Date(formData.enrollDate).setFullYear(
+            new Date(formData.enrollDate).getFullYear() + 5
+          )).getFullYear()
+        : ''
+    }
     readOnly
     disabled
   />
 </div>
+
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">

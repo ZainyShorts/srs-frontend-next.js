@@ -13,6 +13,7 @@ import {
   User,
   Briefcase,
   Heart,
+  Ambulance 
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -75,6 +76,7 @@ export default function StudentProfile() {
     section: student.section,
     enrollmentDate: new Date(student.enrollDate).toLocaleDateString(),
     expectedGraduation: student.expectedGraduation,
+    emergencyConntact: student.emergencyContact,
   };
 
   const guardianInfo = {
@@ -135,6 +137,7 @@ export default function StudentProfile() {
                     <InfoItem icon={Phone} text={studentInfo.phone} />
                     <InfoItem icon={Calendar} text={studentInfo.dob} />
                     <InfoItem icon={MapPin} text={studentInfo.address} />
+                    
                   </div>
                   <div className="space-y-3">
                     <InfoItem
@@ -149,6 +152,8 @@ export default function StudentProfile() {
                       icon={Clock}
                       text={`Expected Graduation: ${studentInfo.expectedGraduation}`}
                     />
+                    <InfoItem icon={Ambulance} text={`${studentInfo.emergencyConntact || 'N/A'}`} />
+
                   </div>
                 </div>
               </div>
