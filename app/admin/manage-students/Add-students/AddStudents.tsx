@@ -652,6 +652,7 @@ export default function StudentGuardianModal({ isOpen, onClose, studentData, han
       clubs: "", // Add this line
       lunch: "", // Add this line
       nationality: "", // Add this line
+      emergencyContact: ""
     })
   }
 

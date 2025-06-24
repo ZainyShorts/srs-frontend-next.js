@@ -98,6 +98,8 @@ export default function TeacherDashboard() {
 
       const data: ApiResponse = await response.json()
 
+      console.log('activity', data)
+
       const transformedActivities = data.data.map((activity) => {
         const timestamp = getRelativeTime(new Date(activity.createdAt))
 
@@ -138,6 +140,7 @@ export default function TeacherDashboard() {
       }
 
       const data: TeacherStats = await response.json()
+      console.log('teacherStats',data)
       setTeacherStats(data)
     } catch (err) {
       console.error("Error fetching teacher stats:", err)

@@ -40,7 +40,7 @@ export function ExcelUploadModal({ open, onOpenChange, onClose, refetch }: Excel
   
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_SRS_SERVER}/student/import`,
+        `${process.env.NEXT_PUBLIC_SRS_SERVER}/student/bulk-upload`,
         formData
       );
   
@@ -49,7 +49,7 @@ export function ExcelUploadModal({ open, onOpenChange, onClose, refetch }: Excel
       if (response.data.status == 409) {
         toast.error(response.data.msg);
       } else {
-        toast.success(response.data.message || "Upload Successful!");
+        toast.success(response.data.msg || "Upload Successful!");
         setFile(null);
         refetch();
   
